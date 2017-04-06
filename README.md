@@ -59,3 +59,7 @@ The trained pipeline will be in the `data/pipeline.pickle` file. Use python's
 `pickle` module to load it.
 
 The classifier evaluation will be stored in the `data/pipeline_evaluation.txt` file.
+
+Keep in mind that training can take a long time. On a laptop with an i3-3217U CPU
+and 8GB of RAM it took about an hour to train a classifier using a 2000 document
+dataset.
