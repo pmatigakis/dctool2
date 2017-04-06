@@ -32,7 +32,7 @@ Start the luigi scheduler
 luigid --pidfile /path/to/pid/file --logdir /path/to/logs --state-path /path/to/state/file
 ```
 
-Run the luigi tasks. The CreateClassifier task will perform a grid search to find the
+Run the luigi tasks. The `CreateClassifier` task will perform a grid search to find the
 parameters that give the best classification result. 
 
 The following parameters must be given
@@ -41,6 +41,8 @@ The following parameters must be given
 | ------------- | ---------------------------------------- |
 | workers       | how many luigi workers to start          |
 | categories    | what categories to use in the classifier |
+| labeled-pages | the hdfs path to the labeled pages       |
+| test-size     | the test set size                        |
 | min-df        | the term minimum document frequency      |
 | max-df        | the term maximum document frequency      |
 | percentile    | what percentile of features to keep      |
@@ -56,4 +58,4 @@ luigi --module dctool2.categories.tasks CreateClassifier --workers 4 --categorie
 The trained pipeline will be in the `data/pipeline.pickle` file. Use python's
 `pickle` module to load it.
 
-The classifier evaluation will be stored in the data/pipeline_evaluation.txt file.
+The classifier evaluation will be stored in the `data/pipeline_evaluation.txt` file.
