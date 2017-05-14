@@ -29,6 +29,7 @@ class CreateDataset(Task):
     labeled_pages = Parameter()
     namenode = Parameter()
     namenode_port = IntParameter()
+    random_state = IntParameter()
 
     def output(self):
         return [
@@ -72,13 +73,15 @@ class SplitTrainTestDataset(Task):
     labeled_pages = Parameter()
     namenode = Parameter()
     namenode_port = IntParameter()
+    random_state = IntParameter()
 
     def requires(self):
         return CreateDataset(
             categories=self.categories,
             labeled_pages=self.labeled_pages,
             namenode=self.namenode,
-            namenode_port=self.namenode_port
+            namenode_port=self.namenode_port,
+            random_state=self.random_state
         )
 
     def output(self):
@@ -101,7 +104,8 @@ class SplitTrainTestDataset(Task):
         data_train, data_test, classes_train, classes_test = train_test_split(
             data,
             classes,
-            test_size=self.test_size
+            test_size=self.test_size,
+            random_state=self.random_state
         )
 
         (classes_train_file,
@@ -167,6 +171,7 @@ class PipelineCrossValScore(Task):
     namenode = Parameter()
     namenode_port = IntParameter()
     alpha = FloatParameter()
+    random_state = IntParameter()
 
     def requires(self):
         return [
@@ -175,7 +180,8 @@ class PipelineCrossValScore(Task):
                 test_size=self.test_size,
                 labeled_pages=self.labeled_pages,
                 namenode=self.namenode,
-                namenode_port=self.namenode_port
+                namenode_port=self.namenode_port,
+                random_state=self.random_state
             ),
             CreatePipeline()
         ]
@@ -244,6 +250,7 @@ class EvaluatePipelines(Task):
     namenode = Parameter()
     namenode_port = IntParameter()
     alpha = ListParameter()
+    random_state = IntParameter()
 
     def requires(self):
         pipeline_data = itertools.product(
@@ -266,7 +273,8 @@ class EvaluatePipelines(Task):
                 labeled_pages=self.labeled_pages,
                 namenode=self.namenode,
                 namenode_port=self.namenode_port,
-                alpha=alpha
+                alpha=alpha,
+                random_state=self.random_state
             )
             for min_df, max_df, percentile, alpha in pipeline_data
         ]
@@ -296,6 +304,7 @@ class SelectBestPipelineParameters(Task):
     namenode = Parameter()
     namenode_port = IntParameter()
     alpha = ListParameter()
+    random_state = IntParameter()
 
     def requires(self):
         return EvaluatePipelines(
@@ -307,7 +316,8 @@ class SelectBestPipelineParameters(Task):
             labeled_pages=self.labeled_pages,
             namenode=self.namenode,
             namenode_port=self.namenode_port,
-            alpha=self.alpha
+            alpha=self.alpha,
+            random_state=self.random_state
         )
 
     def output(self):
@@ -341,6 +351,7 @@ class TrainPipeline(Task):
     namenode = Parameter()
     namenode_port = IntParameter()
     alpha = ListParameter()
+    random_state = IntParameter()
 
     def requires(self):
         return [
@@ -349,7 +360,8 @@ class TrainPipeline(Task):
                 test_size=self.test_size,
                 labeled_pages=self.labeled_pages,
                 namenode=self.namenode,
-                namenode_port=self.namenode_port
+                namenode_port=self.namenode_port,
+                random_state=self.random_state
             ),
             CreatePipeline(),
             SelectBestPipelineParameters(
@@ -361,7 +373,8 @@ class TrainPipeline(Task):
                 labeled_pages=self.labeled_pages,
                 namenode=self.namenode,
                 namenode_port=self.namenode_port,
-                alpha=self.alpha
+                alpha=self.alpha,
+                random_state=self.random_state
             )
         ]
 
@@ -407,6 +420,7 @@ class EvaluatePipeline(Task):
     namenode = Parameter()
     namenode_port = IntParameter()
     alpha = ListParameter()
+    random_state = IntParameter()
 
     def requires(self):
         return [
@@ -415,7 +429,8 @@ class EvaluatePipeline(Task):
                 test_size=self.test_size,
                 labeled_pages=self.labeled_pages,
                 namenode=self.namenode,
-                namenode_port=self.namenode_port
+                namenode_port=self.namenode_port,
+                random_state=self.random_state
             ),
             TrainPipeline(
                 categories=self.categories,
@@ -426,7 +441,8 @@ class EvaluatePipeline(Task):
                 labeled_pages=self.labeled_pages,
                 namenode=self.namenode,
                 namenode_port=self.namenode_port,
-                alpha=self.alpha
+                alpha=self.alpha,
+                random_state=self.random_state
             )
         ]
 
@@ -466,6 +482,7 @@ class CreateClassifier(WrapperTask):
     namenode = Parameter()
     namenode_port = IntParameter()
     alpha = ListParameter()
+    random_state = IntParameter()
 
     def requires(self):
         return [
@@ -478,7 +495,8 @@ class CreateClassifier(WrapperTask):
                 labeled_pages=self.labeled_pages,
                 namenode=self.namenode,
                 namenode_port=self.namenode_port,
-                alpha=self.alpha
+                alpha=self.alpha,
+                random_state=self.random_state
             ),
             EvaluatePipeline(
                 categories=self.categories,
@@ -489,6 +507,7 @@ class CreateClassifier(WrapperTask):
                 labeled_pages=self.labeled_pages,
                 namenode=self.namenode,
                 namenode_port=self.namenode_port,
-                alpha=self.alpha
+                alpha=self.alpha,
+                random_state=self.random_state
             ),
         ]
