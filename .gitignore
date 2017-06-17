@@ -3,6 +3,5 @@
 temp/
 settings.py
 data/
-luigi.cfg
 upload_data
 dctool2.egg-info/

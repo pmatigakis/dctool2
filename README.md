@@ -39,7 +39,14 @@ The following parameters must be given
 
 | variable      | description                              |
 | ------------- | ---------------------------------------- |
-| workers       | how many luigi workers to start          |
+| date          | the date that this task was run. This is |
+|               | used only in order to create the result  |
+|               | directory.                               |
+
+The rest of the configuration variables are defined in the `luigi.cfg` file.
+
+| variable      | description                              |
+| ------------- | ---------------------------------------- |
 | categories    | what categories to use in the classifier |
 | labeled-pages | the hdfs path to the labeled pages       |
 | test-size     | the test set size                        |
@@ -50,15 +57,16 @@ The following parameters must be given
 | namenode      | the hadoop namenode address              |
 | namenode-port | the hadoop namenode port                 |
 
+Start the task with the following command 
 
 ```
-luigi --module dctool2.categories.tasks CreateClassifier --workers 4 --categories '["category_1", "category_2"]' --test-size 0.2 --min-df '[3, 5, 20]' --max-df '[0.6, 0.7, 0.8, 0.9]' --percentile '[5, 10, 15, 20]' --labeled-pages "/user/panagiotis/labelled_pages" --namenode "localhost" --namenode-port 9000 --random_state 1234 --alpha '[0.00001, 0.01, 0.001]' 
+luigi --module dctool2.categories.tasks CreateClassifier --workers 4 --date 2017-6-17 
 ```
 
-The trained pipeline will be in the `data/pipeline.pickle` file. Use python's
+The trained pipeline will be in the `data/<date>/pipeline.pickle` file. Use python's
 `pickle` module to load it.
 
-The classifier evaluation will be stored in the `data/pipeline_evaluation.txt` file.
+The classifier evaluation will be stored in the `data/<date>pipeline_evaluation.txt` file.
 
 Keep in mind that training can take a long time. On a laptop with an i3-3217U CPU
 and 8GB of RAM it took about an hour to train a classifier using a 2000 document

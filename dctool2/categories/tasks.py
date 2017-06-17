@@ -4,7 +4,7 @@ import itertools
 import pickle
 
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
-                   WrapperTask, Parameter, LocalTarget)
+                   LocalTarget, DateParameter, WrapperTask)
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import SelectPercentile, chi2
@@ -25,13 +25,13 @@ def create_classifier():
 
 
 class CreateDataset(Task):
+    date = DateParameter()
     categories = ListParameter()
-    random_state = IntParameter()
 
     def output(self):
         return [
-            LocalTarget("data/dataset/classes.pickle"),
-            LocalTarget("data/dataset/data.pickle")
+            LocalTarget("data/{}/dataset/classes.pickle".format(self.date)),
+            LocalTarget("data/{}/dataset/data.pickle".format(self.date))
         ]
 
     def requires(self):
@@ -61,22 +61,21 @@ class CreateDataset(Task):
 
 
 class SplitTrainTestDataset(Task):
-    categories = ListParameter()
+    date = DateParameter()
     test_size = FloatParameter()
     random_state = IntParameter()
 
     def requires(self):
-        return CreateDataset(
-            categories=self.categories,
-            random_state=self.random_state
-        )
+        return CreateDataset(date=self.date)
 
     def output(self):
+        base_dir = "data/{}/train_test_data".format(self.date)
+
         return [
-            LocalTarget("data/train_test_data/train_classes.pickle"),
-            LocalTarget("data/train_test_data/train_data.pickle"),
-            LocalTarget("data/train_test_data/test_classes.pickle"),
-            LocalTarget("data/train_test_data/test_data.pickle")
+            LocalTarget("{}/train_classes.pickle".format(base_dir)),
+            LocalTarget("{}/train_data.pickle".format(base_dir)),
+            LocalTarget("{}/test_classes.pickle".format(base_dir)),
+            LocalTarget("{}/test_data.pickle".format(base_dir))
         ]
 
     def run(self):
@@ -118,8 +117,11 @@ class SplitTrainTestDataset(Task):
 
 
 class CreatePipeline(Task):
+    date = DateParameter()
+
     def output(self):
-        return LocalTarget("data/untrained_pipeline.pickle")
+        return LocalTarget(
+            "data/{}/untrained_pipeline.pickle".format(self.date))
 
     def run(self):
         ngram_range = (1, 2)
@@ -149,22 +151,16 @@ class CreatePipeline(Task):
 
 
 class PipelineCrossValScore(Task):
-    categories = ListParameter()
-    test_size = FloatParameter()
+    date = DateParameter()
     min_df = IntParameter()
     max_df = FloatParameter()
     percentile = IntParameter()
     alpha = FloatParameter()
-    random_state = IntParameter()
 
     def requires(self):
         return [
-            SplitTrainTestDataset(
-                categories=self.categories,
-                test_size=self.test_size,
-                random_state=self.random_state
-            ),
-            CreatePipeline()
+            SplitTrainTestDataset(date=self.date),
+            CreatePipeline(date=self.date)
         ]
 
     def output(self):
@@ -176,9 +172,9 @@ class PipelineCrossValScore(Task):
                                              self.alpha
                                         )
 
-        scores_path = "data/pipeline_cross_val_scores/{}"
+        scores_path = "data/{}/pipeline_cross_val_scores/{}"
 
-        return LocalTarget(scores_path.format(task_file))
+        return LocalTarget(scores_path.format(self.date, task_file))
 
     def run(self):
         (classes_train_file,
@@ -222,13 +218,11 @@ class PipelineCrossValScore(Task):
 
 
 class EvaluatePipelines(Task):
-    categories = ListParameter()
-    test_size = FloatParameter()
+    date = DateParameter()
     min_df = ListParameter()
     max_df = ListParameter()
     percentile = ListParameter()
     alpha = ListParameter()
-    random_state = IntParameter()
 
     def requires(self):
         pipeline_data = itertools.product(
@@ -243,13 +237,11 @@ class EvaluatePipelines(Task):
 
         tasks = [
             PipelineCrossValScore(
-                categories=self.categories,
-                test_size=self.test_size,
+                date=self.date,
                 min_df=min_df,
                 max_df=max_df,
                 percentile=percentile,
-                alpha=alpha,
-                random_state=self.random_state
+                alpha=alpha
             )
             for min_df, max_df, percentile, alpha in pipeline_data
         ]
@@ -257,7 +249,8 @@ class EvaluatePipelines(Task):
         return tasks
 
     def output(self):
-        return LocalTarget("data/pipeline_evaluations.txt")
+        return LocalTarget(
+            "data/{}/pipeline_evaluations.txt".format(self.date))
 
     def run(self):
         pipeline_score_files = self.input()
@@ -270,27 +263,14 @@ class EvaluatePipelines(Task):
 
 
 class SelectBestPipelineParameters(Task):
-    categories = ListParameter()
-    test_size = FloatParameter()
-    min_df = ListParameter()
-    max_df = ListParameter()
-    percentile = ListParameter()
-    alpha = ListParameter()
-    random_state = IntParameter()
+    date = DateParameter()
 
     def requires(self):
-        return EvaluatePipelines(
-            categories=self.categories,
-            test_size=self.test_size,
-            min_df=self.min_df,
-            max_df=self.max_df,
-            percentile=self.percentile,
-            alpha=self.alpha,
-            random_state=self.random_state
-        )
+        return EvaluatePipelines(date=self.date)
 
     def output(self):
-        return LocalTarget("data/best_pipeline_parameters.json")
+        return LocalTarget(
+            "data/{}/best_pipeline_parameters.json".format(self.date))
 
     def run(self):
         parameter_scores = []
@@ -311,35 +291,17 @@ class SelectBestPipelineParameters(Task):
 
 
 class TrainPipeline(Task):
-    categories = ListParameter()
-    test_size = FloatParameter()
-    min_df = ListParameter()
-    max_df = ListParameter()
-    percentile = ListParameter()
-    alpha = ListParameter()
-    random_state = IntParameter()
+    date = DateParameter()
 
     def requires(self):
         return [
-            SplitTrainTestDataset(
-                categories=self.categories,
-                test_size=self.test_size,
-                random_state=self.random_state
-            ),
-            CreatePipeline(),
-            SelectBestPipelineParameters(
-                categories=self.categories,
-                test_size=self.test_size,
-                min_df=self.min_df,
-                max_df=self.max_df,
-                percentile=self.percentile,
-                alpha=self.alpha,
-                random_state=self.random_state
-            )
+            SplitTrainTestDataset(date=self.date),
+            CreatePipeline(date=self.date),
+            SelectBestPipelineParameters(date=self.date)
         ]
 
     def output(self):
-        return LocalTarget("data/pipeline.pickle")
+        return LocalTarget("data/{}/pipeline.pickle".format(self.date))
 
     def run(self):
         data_files, pipeline_file, pipeline_parameters_file = self.input()
@@ -371,34 +333,16 @@ class TrainPipeline(Task):
 
 
 class EvaluatePipeline(Task):
-    categories = ListParameter()
-    test_size = FloatParameter()
-    min_df = ListParameter()
-    max_df = ListParameter()
-    percentile = ListParameter()
-    alpha = ListParameter()
-    random_state = IntParameter()
+    date = DateParameter()
 
     def requires(self):
         return [
-            SplitTrainTestDataset(
-                categories=self.categories,
-                test_size=self.test_size,
-                random_state=self.random_state
-            ),
-            TrainPipeline(
-                categories=self.categories,
-                test_size=self.test_size,
-                min_df=self.min_df,
-                max_df=self.max_df,
-                percentile=self.percentile,
-                alpha=self.alpha,
-                random_state=self.random_state
-            )
+            SplitTrainTestDataset(date=self.date),
+            TrainPipeline(date=self.date)
         ]
 
     def output(self):
-        return LocalTarget("data/pipeline_evaluation.txt")
+        return LocalTarget("data/{}/pipeline_evaluation.txt".format(self.date))
 
     def run(self):
         (classes_train_file,
@@ -424,32 +368,10 @@ class EvaluatePipeline(Task):
 
 
 class CreateClassifier(WrapperTask):
-    categories = ListParameter()
-    test_size = FloatParameter()
-    min_df = ListParameter()
-    max_df = ListParameter()
-    percentile = ListParameter()
-    alpha = ListParameter()
-    random_state = IntParameter()
+    date = DateParameter()
 
     def requires(self):
         return [
-            TrainPipeline(
-                categories=self.categories,
-                test_size=self.test_size,
-                min_df=self.min_df,
-                max_df=self.max_df,
-                percentile=self.percentile,
-                alpha=self.alpha,
-                random_state=self.random_state
-            ),
-            EvaluatePipeline(
-                categories=self.categories,
-                test_size=self.test_size,
-                min_df=self.min_df,
-                max_df=self.max_df,
-                percentile=self.percentile,
-                alpha=self.alpha,
-                random_state=self.random_state
-            ),
+            TrainPipeline(date=self.date),
+            EvaluatePipeline(date=self.date),
         ]
