@@ -26,9 +26,6 @@ def create_classifier():
 
 class CreateDataset(Task):
     categories = ListParameter()
-    labeled_pages = Parameter()
-    namenode = Parameter()
-    namenode_port = IntParameter()
     random_state = IntParameter()
 
     def output(self):
@@ -38,11 +35,7 @@ class CreateDataset(Task):
         ]
 
     def requires(self):
-        return CreateDocumentsFile(
-            labeled_pages=self.labeled_pages,
-            namenode=self.namenode,
-            namenode_port=self.namenode_port
-        )
+        return CreateDocumentsFile()
 
     def run(self):
         classes_file, data_file = self.output()
@@ -70,17 +63,11 @@ class CreateDataset(Task):
 class SplitTrainTestDataset(Task):
     categories = ListParameter()
     test_size = FloatParameter()
-    labeled_pages = Parameter()
-    namenode = Parameter()
-    namenode_port = IntParameter()
     random_state = IntParameter()
 
     def requires(self):
         return CreateDataset(
             categories=self.categories,
-            labeled_pages=self.labeled_pages,
-            namenode=self.namenode,
-            namenode_port=self.namenode_port,
             random_state=self.random_state
         )
 
@@ -167,9 +154,6 @@ class PipelineCrossValScore(Task):
     min_df = IntParameter()
     max_df = FloatParameter()
     percentile = IntParameter()
-    labeled_pages = Parameter()
-    namenode = Parameter()
-    namenode_port = IntParameter()
     alpha = FloatParameter()
     random_state = IntParameter()
 
@@ -178,9 +162,6 @@ class PipelineCrossValScore(Task):
             SplitTrainTestDataset(
                 categories=self.categories,
                 test_size=self.test_size,
-                labeled_pages=self.labeled_pages,
-                namenode=self.namenode,
-                namenode_port=self.namenode_port,
                 random_state=self.random_state
             ),
             CreatePipeline()
@@ -246,9 +227,6 @@ class EvaluatePipelines(Task):
     min_df = ListParameter()
     max_df = ListParameter()
     percentile = ListParameter()
-    labeled_pages = Parameter()
-    namenode = Parameter()
-    namenode_port = IntParameter()
     alpha = ListParameter()
     random_state = IntParameter()
 
@@ -270,9 +248,6 @@ class EvaluatePipelines(Task):
                 min_df=min_df,
                 max_df=max_df,
                 percentile=percentile,
-                labeled_pages=self.labeled_pages,
-                namenode=self.namenode,
-                namenode_port=self.namenode_port,
                 alpha=alpha,
                 random_state=self.random_state
             )
@@ -300,9 +275,6 @@ class SelectBestPipelineParameters(Task):
     min_df = ListParameter()
     max_df = ListParameter()
     percentile = ListParameter()
-    labeled_pages = Parameter()
-    namenode = Parameter()
-    namenode_port = IntParameter()
     alpha = ListParameter()
     random_state = IntParameter()
 
@@ -313,9 +285,6 @@ class SelectBestPipelineParameters(Task):
             min_df=self.min_df,
             max_df=self.max_df,
             percentile=self.percentile,
-            labeled_pages=self.labeled_pages,
-            namenode=self.namenode,
-            namenode_port=self.namenode_port,
             alpha=self.alpha,
             random_state=self.random_state
         )
@@ -347,9 +316,6 @@ class TrainPipeline(Task):
     min_df = ListParameter()
     max_df = ListParameter()
     percentile = ListParameter()
-    labeled_pages = Parameter()
-    namenode = Parameter()
-    namenode_port = IntParameter()
     alpha = ListParameter()
     random_state = IntParameter()
 
@@ -358,9 +324,6 @@ class TrainPipeline(Task):
             SplitTrainTestDataset(
                 categories=self.categories,
                 test_size=self.test_size,
-                labeled_pages=self.labeled_pages,
-                namenode=self.namenode,
-                namenode_port=self.namenode_port,
                 random_state=self.random_state
             ),
             CreatePipeline(),
@@ -370,9 +333,6 @@ class TrainPipeline(Task):
                 min_df=self.min_df,
                 max_df=self.max_df,
                 percentile=self.percentile,
-                labeled_pages=self.labeled_pages,
-                namenode=self.namenode,
-                namenode_port=self.namenode_port,
                 alpha=self.alpha,
                 random_state=self.random_state
             )
@@ -416,9 +376,6 @@ class EvaluatePipeline(Task):
     min_df = ListParameter()
     max_df = ListParameter()
     percentile = ListParameter()
-    labeled_pages = Parameter()
-    namenode = Parameter()
-    namenode_port = IntParameter()
     alpha = ListParameter()
     random_state = IntParameter()
 
@@ -427,9 +384,6 @@ class EvaluatePipeline(Task):
             SplitTrainTestDataset(
                 categories=self.categories,
                 test_size=self.test_size,
-                labeled_pages=self.labeled_pages,
-                namenode=self.namenode,
-                namenode_port=self.namenode_port,
                 random_state=self.random_state
             ),
             TrainPipeline(
@@ -438,9 +392,6 @@ class EvaluatePipeline(Task):
                 min_df=self.min_df,
                 max_df=self.max_df,
                 percentile=self.percentile,
-                labeled_pages=self.labeled_pages,
-                namenode=self.namenode,
-                namenode_port=self.namenode_port,
                 alpha=self.alpha,
                 random_state=self.random_state
             )
@@ -478,9 +429,6 @@ class CreateClassifier(WrapperTask):
     min_df = ListParameter()
     max_df = ListParameter()
     percentile = ListParameter()
-    labeled_pages = Parameter()
-    namenode = Parameter()
-    namenode_port = IntParameter()
     alpha = ListParameter()
     random_state = IntParameter()
 
@@ -492,9 +440,6 @@ class CreateClassifier(WrapperTask):
                 min_df=self.min_df,
                 max_df=self.max_df,
                 percentile=self.percentile,
-                labeled_pages=self.labeled_pages,
-                namenode=self.namenode,
-                namenode_port=self.namenode_port,
                 alpha=self.alpha,
                 random_state=self.random_state
             ),
@@ -504,9 +449,6 @@ class CreateClassifier(WrapperTask):
                 min_df=self.min_df,
                 max_df=self.max_df,
                 percentile=self.percentile,
-                labeled_pages=self.labeled_pages,
-                namenode=self.namenode,
-                namenode_port=self.namenode_port,
                 alpha=self.alpha,
                 random_state=self.random_state
             ),
