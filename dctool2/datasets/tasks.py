@@ -1,6 +1,6 @@
 import logging
 
-from luigi import Task, Parameter, LocalTarget, IntParameter
+from luigi import Task, Parameter, LocalTarget, IntParameter, DateParameter
 from snakebite.client import Client
 
 
@@ -8,12 +8,13 @@ logger = logging.getLogger(__name__)
 
 
 class CreateDocumentsFile(Task):
+    date = DateParameter()
     labeled_pages = Parameter()
     namenode = Parameter()
     namenode_port = IntParameter()
 
     def output(self):
-        return LocalTarget("data/documents.json")
+        return LocalTarget("data/{}/documents.json".format(self.date))
 
     def run(self):
         client = Client(self.namenode, self.namenode_port, use_trash=False)
