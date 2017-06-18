@@ -35,7 +35,7 @@ class CreateDataset(Task):
         ]
 
     def requires(self):
-        return CreateDocumentsFile()
+        return CreateDocumentsFile(self.date)
 
     def run(self):
         classes_file, data_file = self.output()

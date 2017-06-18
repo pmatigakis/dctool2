@@ -70,4 +70,4 @@ The classifier evaluation will be stored in the `data/<date>pipeline_evaluation.
 
 Keep in mind that training can take a long time. On a laptop with an i3-3217U CPU
 and 8GB of RAM it took about an hour to train a classifier using a 2000 document
-dataset.
+dataset with several different parameters.
