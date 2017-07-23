@@ -156,6 +156,7 @@ class PipelineCrossValScore(Task):
     max_df = FloatParameter()
     percentile = IntParameter()
     alpha = FloatParameter()
+    random_state = IntParameter()
 
     def requires(self):
         return [
@@ -165,11 +166,12 @@ class PipelineCrossValScore(Task):
 
     def output(self):
         task_file = "pipeline_cross_val_score__min_df-{}__max_df-{}__" \
-                    "percentile-{}__alpha={}.json".format(
+                    "percentile-{}__alpha={}__random_state={}.json".format(
                                              self.min_df,
                                              self.max_df,
                                              self.percentile,
-                                             self.alpha
+                                             self.alpha,
+                                             self.random_state
                                         )
 
         scores_path = "data/{}/pipeline_cross_val_scores/{}"
@@ -195,7 +197,8 @@ class PipelineCrossValScore(Task):
             "feature_extractor__min_df": self.min_df,
             "feature_extractor__max_df": self.max_df,
             "feature_selector__percentile": self.percentile,
-            "classifier__base_estimator__alpha": self.alpha
+            "classifier__base_estimator__alpha": self.alpha,
+            "classifier__base_estimator__random_state": self.random_state
             # 'classifier__alpha': (0.00001, 0.000001),
         }
 
@@ -208,7 +211,8 @@ class PipelineCrossValScore(Task):
                 "feature_extractor__min_df": self.min_df,
                 "feature_extractor__max_df": self.max_df,
                 "feature_selector__percentile": self.percentile,
-                "classifier__base_estimator__alpha": self.alpha
+                "classifier__base_estimator__alpha": self.alpha,
+                "classifier__base_estimator__random_state": self.random_state
             },
             "scores": scores.tolist()
         }
@@ -223,6 +227,7 @@ class EvaluatePipelines(Task):
     max_df = ListParameter()
     percentile = ListParameter()
     alpha = ListParameter()
+    random_state = IntParameter()
 
     def requires(self):
         pipeline_data = itertools.product(
@@ -241,7 +246,8 @@ class EvaluatePipelines(Task):
                 min_df=min_df,
                 max_df=max_df,
                 percentile=percentile,
-                alpha=alpha
+                alpha=alpha,
+                random_state=self.random_state
             )
             for min_df, max_df, percentile, alpha in pipeline_data
         ]
