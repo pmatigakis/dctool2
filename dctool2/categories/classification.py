@@ -1,3 +1,4 @@
+import logging
 import json
 import pickle
 
@@ -7,6 +8,9 @@ from sklearn import metrics
 from dctool2.categories.datasets import SplitTrainTestDataset
 from dctool2.categories.pipelines import CreatePipeline
 from dctool2.categories.evaluation import SelectBestPipelineParameters
+
+
+logger = logging.getLogger(__name__)
 
 
 class TrainPipeline(Task):
@@ -23,6 +27,8 @@ class TrainPipeline(Task):
         return LocalTarget("data/{}/pipeline.pickle".format(self.date))
 
     def run(self):
+        logger.info("training pipeline")
+
         data_files, pipeline_file, pipeline_parameters_file = self.input()
 
         (classes_train_file,
@@ -64,6 +70,8 @@ class EvaluatePipeline(Task):
         return LocalTarget("data/{}/pipeline_evaluation.txt".format(self.date))
 
     def run(self):
+        logger.info("evaluating pipeline")
+
         (classes_train_file,
          data_train_file,
          classes_test_file,

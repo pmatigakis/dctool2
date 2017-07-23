@@ -17,6 +17,8 @@ class CreateDocumentsFile(Task):
         return LocalTarget("data/{}/documents.json".format(self.date))
 
     def run(self):
+        logger.info("creating documents file")
+
         client = Client(self.namenode, self.namenode_port, use_trash=False)
 
         document_count = 0

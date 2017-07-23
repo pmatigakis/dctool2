@@ -27,6 +27,8 @@ class CreateDataset(Task):
         return CreateDocumentsFile(self.date)
 
     def run(self):
+        logger.info("creating classifier dataset")
+
         classes_file, data_file = self.output()
 
         classes = []
@@ -68,6 +70,8 @@ class SplitTrainTestDataset(Task):
         ]
 
     def run(self):
+        logger.info("creating classifier train/test dataset split")
+
         classes_file, data_file = self.input()
 
         with classes_file.open() as f:

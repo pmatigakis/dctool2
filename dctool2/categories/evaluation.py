@@ -1,6 +1,7 @@
 import json
 import itertools
 import pickle
+import logging
 
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
                    LocalTarget, DateParameter)
@@ -8,6 +9,9 @@ from sklearn.cross_validation import cross_val_score
 
 from dctool2.categories.datasets import SplitTrainTestDataset
 from dctool2.categories.pipelines import CreatePipeline
+
+
+logger = logging.getLogger(__name__)
 
 
 class PipelineCrossValScore(Task):
@@ -39,6 +43,8 @@ class PipelineCrossValScore(Task):
         return LocalTarget(scores_path.format(self.date, task_file))
 
     def run(self):
+        logger.info("calculating pipeline cross validation score")
+
         (classes_train_file,
          data_train_file,
          classes_test_file,
@@ -119,6 +125,8 @@ class EvaluatePipelines(Task):
             "data/{}/pipeline_evaluations.txt".format(self.date))
 
     def run(self):
+        logger.info("evaluating pipelines")
+
         pipeline_score_files = self.input()
 
         with self.output().open("w") as f:
@@ -151,6 +159,8 @@ class SelectBestPipelineParameters(Task):
             "data/{}/best_pipeline_parameters.json".format(self.date))
 
     def run(self):
+        logger.info("selecting best pipeline features")
+
         parameter_scores = []
 
         with self.input().open("r") as f:

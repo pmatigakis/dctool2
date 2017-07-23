@@ -1,4 +1,5 @@
 import pickle
+import logging
 
 from luigi import Task, LocalTarget, DateParameter
 from sklearn.pipeline import Pipeline
@@ -6,6 +7,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import SelectPercentile, chi2
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import SGDClassifier
+
+
+logger = logging.getLogger(__name__)
 
 
 class CreatePipeline(Task):
@@ -16,6 +20,8 @@ class CreatePipeline(Task):
             "data/{}/untrained_pipeline.pickle".format(self.date))
 
     def run(self):
+        logger.info("creating pipeline")
+
         ngram_range = (1, 2)
 
         feature_extractor = TfidfVectorizer(
