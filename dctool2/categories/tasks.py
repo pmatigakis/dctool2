@@ -270,9 +270,21 @@ class EvaluatePipelines(Task):
 
 class SelectBestPipelineParameters(Task):
     date = DateParameter()
+    min_df = ListParameter()
+    max_df = ListParameter()
+    percentile = ListParameter()
+    alpha = ListParameter()
+    random_state = IntParameter()
 
     def requires(self):
-        return EvaluatePipelines(date=self.date)
+        return EvaluatePipelines(
+            date=self.date,
+            min_df=self.min_df,
+            max_df=self.max_df,
+            percentile=self.percentile,
+            alpha=self.alpha,
+            random_state=self.random_state
+        )
 
     def output(self):
         return LocalTarget(
