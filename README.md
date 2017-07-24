@@ -45,17 +45,17 @@ The following parameters must be given
 
 The rest of the configuration variables are defined in the `luigi.cfg` file.
 
-| variable      | description                              |
-| ------------- | ---------------------------------------- |
-| categories    | what categories to use in the classifier |
-| labeled-pages | the hdfs path to the labeled pages       |
-| test-size     | the test set size                        |
-| min-df        | the term minimum document frequency      |
-| max-df        | the term maximum document frequency      |
-| percentile    | what percentile of features to keep      |
-| alpha         | the SGDClassifier alpha value            |
-| namenode      | the hadoop namenode address              |
-| namenode-port | the hadoop namenode port                 |
+| variable       | description                              |
+| -------------- | ---------------------------------------- |
+| categories     | what categories to use in the classifier |
+| documents-file | the hdfs path to the labeled pages       |
+| test-size      | the test set size                        |
+| min-df         | the term minimum document frequency      |
+| max-df         | the term maximum document frequency      |
+| percentile     | what percentile of features to keep      |
+| alpha          | the SGDClassifier alpha value            |
+| namenode-host  | the hadoop namenode address              |
+| namenode-port  | the hadoop namenode port                 |
 
 Start the task with the following command 
 

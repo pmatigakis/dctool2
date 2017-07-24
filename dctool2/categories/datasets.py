@@ -4,13 +4,20 @@ import logging
 
 from sklearn.cross_validation import train_test_split
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
-                   LocalTarget, DateParameter)
+                   LocalTarget, DateParameter, ExternalTask, Parameter)
+from luigi.contrib.hdfs.target import HdfsTarget
 
-from dctool2.datasets.documents import CreateDocumentsFile
 from dctool2.common import process_web_page
 
 
 logger = logging.getLogger(__name__)
+
+
+class Documents(ExternalTask):
+    documents_file = Parameter()
+
+    def output(self):
+        return HdfsTarget(self.documents_file)
 
 
 class CreateDataset(Task):
@@ -24,7 +31,7 @@ class CreateDataset(Task):
         ]
 
     def requires(self):
-        return CreateDocumentsFile(self.date)
+        return Documents()
 
     def run(self):
         logger.info("creating classifier dataset")
