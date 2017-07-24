@@ -15,9 +15,9 @@ python setup.py install
 ```
 
 ### Usage
-dctool2 requires some labeled web pages to be stored in an hdfs folder. That
-folder must contain one json file per web page. The contents of the file must
-have the following schema.
+dctool2 requires some labeled web pages to be stored in a file on an hdfs folder.
+Every line on that file must contain one json encoded object per web page. The
+contents of the object must have the following schema.
 
 ```python
 {
@@ -48,7 +48,7 @@ The rest of the configuration variables are defined in the `luigi.cfg` file.
 | variable       | description                              |
 | -------------- | ---------------------------------------- |
 | categories     | what categories to use in the classifier |
-| documents-file | the hdfs path to the labeled pages       |
+| documents-file | the hdfs path to the labeled pages file  |
 | test-size      | the test set size                        |
 | min-df         | the term minimum document frequency      |
 | max-df         | the term maximum document frequency      |
