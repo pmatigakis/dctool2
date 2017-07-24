@@ -2,6 +2,7 @@ import json
 import itertools
 import pickle
 import logging
+import hashlib
 
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
                    LocalTarget, DateParameter)
@@ -29,14 +30,21 @@ class PipelineCrossValScore(Task):
         ]
 
     def output(self):
-        task_file = "pipeline_cross_val_score__min_df-{}__max_df-{}__" \
-                    "percentile-{}__alpha={}__random_state={}.json".format(
-                                             self.min_df,
-                                             self.max_df,
-                                             self.percentile,
-                                             self.alpha,
-                                             self.random_state
-                                        )
+        file_id = "min_df-{min_df}__" \
+                  "max_df-{max_df}__" \
+                  "percentile-{percentile}__" \
+                  "alpha={alpha}__" \
+                  "random_state={random_state}".format(
+                      min_df=self.min_df,
+                      max_df=self.max_df,
+                      percentile=self.percentile,
+                      alpha=self.alpha,
+                      random_state=self.random_state
+                  )
+
+        file_id = hashlib.sha256(file_id).hexdigest()
+
+        task_file = "pipeline_cross_val_score__{}.json".format(file_id)
 
         scores_path = "data/{}/pipeline_cross_val_scores/{}"
 
