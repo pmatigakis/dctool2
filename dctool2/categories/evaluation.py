@@ -5,7 +5,7 @@ import logging
 import hashlib
 
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
-                   LocalTarget, DateParameter, Parameter)
+                   LocalTarget, Parameter)
 from sklearn.cross_validation import cross_val_score
 
 from dctool2.categories.datasets import SplitTrainTestDataset
@@ -16,21 +16,23 @@ logger = logging.getLogger(__name__)
 
 
 class CalculatePipelineCrossValScore(Task):
-    date = DateParameter()
     min_df = IntParameter()
     max_df = FloatParameter()
     percentile = IntParameter()
     alpha = FloatParameter()
     random_state = IntParameter()
     documents_file = Parameter()
+    output_folder = Parameter()
 
     def requires(self):
         return [
             SplitTrainTestDataset(
-                date=self.date,
-                documents_file=self.documents_file
+                documents_file=self.documents_file,
+                output_folder=self.output_folder
             ),
-            CreatePipeline(date=self.date)
+            CreatePipeline(
+                output_folder=self.output_folder
+            )
         ]
 
     def output(self):
@@ -50,9 +52,9 @@ class CalculatePipelineCrossValScore(Task):
 
         task_file = "pipeline_cross_val_score__{}.json".format(file_id)
 
-        scores_path = "data/{}/pipeline_cross_val_scores/{}"
+        scores_path = "{}/pipeline_cross_val_scores/{}"
 
-        return LocalTarget(scores_path.format(self.date, task_file))
+        return LocalTarget(scores_path.format(self.output_folder, task_file))
 
     def run(self):
         logger.info("calculating pipeline cross validation score")
@@ -100,13 +102,13 @@ class CalculatePipelineCrossValScore(Task):
 
 
 class EvaluatePipelines(Task):
-    date = DateParameter()
     min_df = ListParameter()
     max_df = ListParameter()
     percentile = ListParameter()
     alpha = ListParameter()
     random_state = IntParameter()
     documents_file = Parameter()
+    output_folder = Parameter()
 
     def requires(self):
         pipeline_data = itertools.product(
@@ -121,13 +123,13 @@ class EvaluatePipelines(Task):
 
         tasks = [
             CalculatePipelineCrossValScore(
-                date=self.date,
                 min_df=min_df,
                 max_df=max_df,
                 percentile=percentile,
                 alpha=alpha,
                 random_state=self.random_state,
-                documents_file=self.documents_file
+                documents_file=self.documents_file,
+                output_folder=self.output_folder
             )
             for min_df, max_df, percentile, alpha in pipeline_data
         ]
@@ -136,7 +138,7 @@ class EvaluatePipelines(Task):
 
     def output(self):
         return LocalTarget(
-            "data/{}/pipeline_evaluations.txt".format(self.date))
+            "{}/pipeline_evaluations.txt".format(self.output_folder))
 
     def run(self):
         logger.info("evaluating pipelines")
@@ -151,28 +153,28 @@ class EvaluatePipelines(Task):
 
 
 class SelectBestPipelineParameters(Task):
-    date = DateParameter()
     min_df = ListParameter()
     max_df = ListParameter()
     percentile = ListParameter()
     alpha = ListParameter()
     random_state = IntParameter()
     documents_file = Parameter()
+    output_folder = Parameter()
 
     def requires(self):
         return EvaluatePipelines(
-            date=self.date,
             min_df=self.min_df,
             max_df=self.max_df,
             percentile=self.percentile,
             alpha=self.alpha,
             random_state=self.random_state,
-            documents_file=self.documents_file
+            documents_file=self.documents_file,
+            output_folder=self.output_folder
         )
 
     def output(self):
         return LocalTarget(
-            "data/{}/best_pipeline_parameters.json".format(self.date))
+            "{}/best_pipeline_parameters.json".format(self.output_folder))
 
     def run(self):
         logger.info("selecting best pipeline features")

@@ -41,6 +41,7 @@ The following parameters must be given
 | -------------- | ---------------------------------------- |
 | date           | the date that this task was run          |
 | documents-file | the hdfs path to the training documents  |
+| output-folder  | the path to store the results            |
 
 The rest of the configuration variables are defined in the `luigi.cfg` file.
 
@@ -58,7 +59,11 @@ The rest of the configuration variables are defined in the `luigi.cfg` file.
 Start the task with the following command 
 
 ```
-luigi --module dctool2.categories.tasks CreateClassifier --workers 4 --date 2017-06-17 --documents-file  "/user/panagiotis/documents/documents.json"
+luigi --module dctool2.categories.tasks CreateClassifier \
+--workers 4 \
+--date 2017-06-17 \
+--documents-file  "/user/panagiotis/documents/documents.json" \
+--output-folder ""/home/panagiotis/projects/dctool/results"
 ```
 
 The trained pipeline will be in the `data/<date>/pipeline.pickle` file. Use python's

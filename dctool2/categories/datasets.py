@@ -4,7 +4,7 @@ import logging
 
 from sklearn.cross_validation import train_test_split
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
-                   LocalTarget, DateParameter, ExternalTask, Parameter)
+                   LocalTarget, ExternalTask, Parameter)
 from luigi.contrib.hdfs.target import HdfsTarget
 
 from dctool2.common import process_web_page
@@ -21,14 +21,15 @@ class Documents(ExternalTask):
 
 
 class CreateDataset(Task):
-    date = DateParameter()
     categories = ListParameter()
     documents_file = Parameter()
+    output_folder = Parameter()
 
     def output(self):
         return [
-            LocalTarget("data/{}/dataset/classes.pickle".format(self.date)),
-            LocalTarget("data/{}/dataset/data.pickle".format(self.date))
+            LocalTarget(
+                "{}/dataset/classes.pickle".format(self.output_folder)),
+            LocalTarget("{}/dataset/data.pickle".format(self.output_folder))
         ]
 
     def requires(self):
@@ -60,19 +61,19 @@ class CreateDataset(Task):
 
 
 class SplitTrainTestDataset(Task):
-    date = DateParameter()
     test_size = FloatParameter()
     random_state = IntParameter()
     documents_file = Parameter()
+    output_folder = Parameter()
 
     def requires(self):
         return CreateDataset(
-            date=self.date,
-            documents_file=self.documents_file
+            documents_file=self.documents_file,
+            output_folder=self.output_folder
         )
 
     def output(self):
-        base_dir = "data/{}/train_test_data".format(self.date)
+        base_dir = "{}/train_test_data".format(self.output_folder)
 
         return [
             LocalTarget("{}/train_classes.pickle".format(base_dir)),

@@ -2,7 +2,7 @@ import logging
 import json
 import pickle
 
-from luigi import Task, LocalTarget, DateParameter, Parameter
+from luigi import Task, LocalTarget, Parameter
 from sklearn import metrics
 
 from dctool2.categories.datasets import SplitTrainTestDataset
@@ -14,24 +14,26 @@ logger = logging.getLogger(__name__)
 
 
 class TrainPipeline(Task):
-    date = DateParameter()
     documents_file = Parameter()
+    output_folder = Parameter()
 
     def requires(self):
         return [
             SplitTrainTestDataset(
-                date=self.date,
-                documents_file=self.documents_file
+                documents_file=self.documents_file,
+                output_folder=self.output_folder
             ),
-            CreatePipeline(date=self.date),
+            CreatePipeline(
+                output_folder=self.output_folder
+            ),
             SelectBestPipelineParameters(
-                date=self.date,
-                documents_file=self.documents_file
+                documents_file=self.documents_file,
+                output_folder=self.output_folder
             )
         ]
 
     def output(self):
-        return LocalTarget("data/{}/pipeline.pickle".format(self.date))
+        return LocalTarget("{}/pipeline.pickle".format(self.output_folder))
 
     def run(self):
         logger.info("training pipeline")
@@ -65,23 +67,24 @@ class TrainPipeline(Task):
 
 
 class EvaluatePipeline(Task):
-    date = DateParameter()
     documents_file = Parameter()
+    output_folder = Parameter()
 
     def requires(self):
         return [
             SplitTrainTestDataset(
-                date=self.date,
-                documents_file=self.documents_file
+                documents_file=self.documents_file,
+                output_folder=self.output_folder
             ),
             TrainPipeline(
-                date=self.date,
-                documents_file=self.documents_file
+                documents_file=self.documents_file,
+                output_folder=self.output_folder
             )
         ]
 
     def output(self):
-        return LocalTarget("data/{}/pipeline_evaluation.txt".format(self.date))
+        return LocalTarget(
+            "{}/pipeline_evaluation.txt".format(self.output_folder))
 
     def run(self):
         logger.info("evaluating pipeline")

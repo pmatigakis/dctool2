@@ -11,15 +11,18 @@ logger = logging.getLogger(__name__)
 class CreateClassifier(WrapperTask):
     date = DateParameter()
     documents_file = Parameter()
+    output_folder = Parameter()
 
     def requires(self):
+        output_folder = "{}/{}".format(self.output_folder, self.date)
+
         return [
             TrainPipeline(
-                date=self.date,
-                documents_file=self.documents_file
+                documents_file=self.documents_file,
+                output_folder=output_folder
             ),
             EvaluatePipeline(
-                date=self.date,
-                documents_file=self.documents_file
+                documents_file=self.documents_file,
+                output_folder=output_folder
             ),
         ]

@@ -1,7 +1,7 @@
 import pickle
 import logging
 
-from luigi import Task, LocalTarget, DateParameter
+from luigi import Task, LocalTarget, Parameter
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import SelectPercentile, chi2
@@ -13,11 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 class CreatePipeline(Task):
-    date = DateParameter()
+    output_folder = Parameter()
 
     def output(self):
         return LocalTarget(
-            "data/{}/untrained_pipeline.pickle".format(self.date))
+            "{}/untrained_pipeline.pickle".format(self.output_folder))
 
     def run(self):
         logger.info("creating pipeline")
