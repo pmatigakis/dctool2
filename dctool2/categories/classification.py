@@ -2,7 +2,7 @@ import logging
 import json
 import pickle
 
-from luigi import Task, LocalTarget, DateParameter
+from luigi import Task, LocalTarget, DateParameter, Parameter
 from sklearn import metrics
 
 from dctool2.categories.datasets import SplitTrainTestDataset
@@ -15,12 +15,19 @@ logger = logging.getLogger(__name__)
 
 class TrainPipeline(Task):
     date = DateParameter()
+    documents_file = Parameter()
 
     def requires(self):
         return [
-            SplitTrainTestDataset(date=self.date),
+            SplitTrainTestDataset(
+                date=self.date,
+                documents_file=self.documents_file
+            ),
             CreatePipeline(date=self.date),
-            SelectBestPipelineParameters(date=self.date)
+            SelectBestPipelineParameters(
+                date=self.date,
+                documents_file=self.documents_file
+            )
         ]
 
     def output(self):
@@ -59,11 +66,18 @@ class TrainPipeline(Task):
 
 class EvaluatePipeline(Task):
     date = DateParameter()
+    documents_file = Parameter()
 
     def requires(self):
         return [
-            SplitTrainTestDataset(date=self.date),
-            TrainPipeline(date=self.date)
+            SplitTrainTestDataset(
+                date=self.date,
+                documents_file=self.documents_file
+            ),
+            TrainPipeline(
+                date=self.date,
+                documents_file=self.documents_file
+            )
         ]
 
     def output(self):

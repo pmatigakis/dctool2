@@ -23,6 +23,7 @@ class Documents(ExternalTask):
 class CreateDataset(Task):
     date = DateParameter()
     categories = ListParameter()
+    documents_file = Parameter()
 
     def output(self):
         return [
@@ -31,7 +32,7 @@ class CreateDataset(Task):
         ]
 
     def requires(self):
-        return Documents()
+        return Documents(documents_file=self.documents_file)
 
     def run(self):
         logger.info("creating classifier dataset")
@@ -62,9 +63,13 @@ class SplitTrainTestDataset(Task):
     date = DateParameter()
     test_size = FloatParameter()
     random_state = IntParameter()
+    documents_file = Parameter()
 
     def requires(self):
-        return CreateDataset(date=self.date)
+        return CreateDataset(
+            date=self.date,
+            documents_file=self.documents_file
+        )
 
     def output(self):
         base_dir = "data/{}/train_test_data".format(self.date)

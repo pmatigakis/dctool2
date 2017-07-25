@@ -37,18 +37,16 @@ parameters that give the best classification result.
 
 The following parameters must be given
 
-| variable      | description                              |
-| ------------- | ---------------------------------------- |
-| date          | the date that this task was run. This is |
-|               | used only in order to create the result  |
-|               | directory.                               |
+| variable       | description                              |
+| -------------- | ---------------------------------------- |
+| date           | the date that this task was run          |
+| documents-file | the hdfs path to the training documents  |
 
 The rest of the configuration variables are defined in the `luigi.cfg` file.
 
 | variable       | description                              |
 | -------------- | ---------------------------------------- |
 | categories     | what categories to use in the classifier |
-| documents-file | the hdfs path to the labeled pages file  |
 | test-size      | the test set size                        |
 | min-df         | the term minimum document frequency      |
 | max-df         | the term maximum document frequency      |
@@ -60,7 +58,7 @@ The rest of the configuration variables are defined in the `luigi.cfg` file.
 Start the task with the following command 
 
 ```
-luigi --module dctool2.categories.tasks CreateClassifier --workers 4 --date 2017-6-17 
+luigi --module dctool2.categories.tasks CreateClassifier --workers 4 --date 2017-06-17 --documents-file  "/user/panagiotis/documents/documents.json"
 ```
 
 The trained pipeline will be in the `data/<date>/pipeline.pickle` file. Use python's

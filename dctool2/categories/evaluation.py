@@ -5,7 +5,7 @@ import logging
 import hashlib
 
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
-                   LocalTarget, DateParameter)
+                   LocalTarget, DateParameter, Parameter)
 from sklearn.cross_validation import cross_val_score
 
 from dctool2.categories.datasets import SplitTrainTestDataset
@@ -15,17 +15,21 @@ from dctool2.categories.pipelines import CreatePipeline
 logger = logging.getLogger(__name__)
 
 
-class PipelineCrossValScore(Task):
+class CalculatePipelineCrossValScore(Task):
     date = DateParameter()
     min_df = IntParameter()
     max_df = FloatParameter()
     percentile = IntParameter()
     alpha = FloatParameter()
     random_state = IntParameter()
+    documents_file = Parameter()
 
     def requires(self):
         return [
-            SplitTrainTestDataset(date=self.date),
+            SplitTrainTestDataset(
+                date=self.date,
+                documents_file=self.documents_file
+            ),
             CreatePipeline(date=self.date)
         ]
 
@@ -102,6 +106,7 @@ class EvaluatePipelines(Task):
     percentile = ListParameter()
     alpha = ListParameter()
     random_state = IntParameter()
+    documents_file = Parameter()
 
     def requires(self):
         pipeline_data = itertools.product(
@@ -115,13 +120,14 @@ class EvaluatePipelines(Task):
         )
 
         tasks = [
-            PipelineCrossValScore(
+            CalculatePipelineCrossValScore(
                 date=self.date,
                 min_df=min_df,
                 max_df=max_df,
                 percentile=percentile,
                 alpha=alpha,
-                random_state=self.random_state
+                random_state=self.random_state,
+                documents_file=self.documents_file
             )
             for min_df, max_df, percentile, alpha in pipeline_data
         ]
@@ -151,6 +157,7 @@ class SelectBestPipelineParameters(Task):
     percentile = ListParameter()
     alpha = ListParameter()
     random_state = IntParameter()
+    documents_file = Parameter()
 
     def requires(self):
         return EvaluatePipelines(
@@ -159,7 +166,8 @@ class SelectBestPipelineParameters(Task):
             max_df=self.max_df,
             percentile=self.percentile,
             alpha=self.alpha,
-            random_state=self.random_state
+            random_state=self.random_state,
+            documents_file=self.documents_file
         )
 
     def output(self):
