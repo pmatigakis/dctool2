@@ -39,7 +39,6 @@ The following parameters must be given
 
 | variable       | description                              |
 | -------------- | ---------------------------------------- |
-| date           | the date that this task was run          |
 | documents-file | the hdfs path to the training documents  |
 | output-folder  | the path to store the results            |
 
@@ -61,15 +60,14 @@ Start the task with the following command
 ```
 luigi --module dctool2.categories.tasks CreateClassifier \
 --workers 4 \
---date 2017-06-17 \
 --documents-file  "/user/panagiotis/documents/documents.json" \
 --output-folder ""/home/panagiotis/projects/dctool/results"
 ```
 
-The trained pipeline will be in the `<output-folder>/<date>/pipeline.pickle` file. Use python's
+The trained pipeline will be in the `<output-folder>/pipeline.pickle` file. Use python's
 `pickle` module to load it.
 
-The classifier evaluation will be stored in the `<output-folder>/<date>pipeline_evaluation.txt` file.
+The classifier evaluation will be stored in the `<output-folder>/pipeline_evaluation.txt` file.
 
 Keep in mind that training can take a long time. On a laptop with an i3-3217U CPU
 and 8GB of RAM it took about an hour to train a classifier using a 2000 document
