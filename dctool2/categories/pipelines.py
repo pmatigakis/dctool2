@@ -1,4 +1,3 @@
-import pickle
 import logging
 
 from luigi import Task, LocalTarget, Parameter
@@ -7,6 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import SelectPercentile, chi2
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import SGDClassifier
+from sklearn.externals import joblib
 
 
 logger = logging.getLogger(__name__)
@@ -43,6 +43,6 @@ class CreatePipeline(Task):
             ("classifier", classifier)
         ])
 
-        with self.output().open("w") as f:
-            data = pickle.dumps(pipeline)
-            f.write(data)
+        output_file = self.output()
+        output_file.makedirs()
+        joblib.dump(pipeline, output_file.path)

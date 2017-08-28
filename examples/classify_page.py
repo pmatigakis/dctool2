@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
-import pickle
+
+from sklearn.externals import joblib
 
 from dctool2.common import process_web_page
 
@@ -18,8 +19,7 @@ def get_arguments():
 def main():
     args = get_arguments()
 
-    with open(args.classifier) as f:
-        classifier = pickle.load(f)
+    classifier = joblib.load(args.classifier)
 
     response = requests.get(args.url)
 

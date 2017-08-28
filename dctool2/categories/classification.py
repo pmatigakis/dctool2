@@ -1,9 +1,9 @@
 import logging
 import json
-import pickle
 
 from luigi import Task, LocalTarget, Parameter
 from sklearn import metrics
+from sklearn.externals import joblib
 
 from dctool2.categories.datasets import SplitTrainTestDataset
 from dctool2.categories.pipelines import CreatePipeline
@@ -45,14 +45,9 @@ class TrainPipeline(Task):
          classes_test_file,
          data_test_file) = data_files
 
-        with classes_train_file.open() as f:
-            classes = pickle.loads(f.read())
-
-        with data_train_file.open() as f:
-            data = pickle.loads(f.read())
-
-        with pipeline_file.open() as f:
-            pipeline = pickle.loads(f.read())
+        classes = joblib.load(classes_train_file.path)
+        data = joblib.load(data_train_file.path)
+        pipeline = joblib.load(pipeline_file.path)
 
         with pipeline_parameters_file.open() as f:
             parameters = json.loads(f.read())["parameters"]
@@ -61,9 +56,9 @@ class TrainPipeline(Task):
 
         pipeline.fit(data, classes)
 
-        with self.output().open("w") as f:
-            data = pickle.dumps(pipeline)
-            f.write(data)
+        output_file = self.output()
+        output_file.makedirs()
+        joblib.dump(pipeline, output_file.path)
 
 
 class EvaluatePipeline(Task):
@@ -94,14 +89,9 @@ class EvaluatePipeline(Task):
          classes_test_file,
          data_test_file), pipeline_file = self.input()
 
-        with classes_test_file.open() as f:
-            classes = pickle.loads(f.read())
-
-        with data_test_file.open() as f:
-            data = pickle.loads(f.read())
-
-        with pipeline_file.open() as f:
-            pipeline = pickle.loads(f.read())
+        classes = joblib.load(classes_test_file.path)
+        data = joblib.load(data_test_file.path)
+        pipeline = joblib.load(pipeline_file.path)
 
         results = pipeline.predict(data)
 

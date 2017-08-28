@@ -1,11 +1,11 @@
 import json
-import pickle
 import logging
 
 from sklearn.cross_validation import train_test_split
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
                    LocalTarget, ExternalTask, Parameter)
 from luigi.contrib.hdfs.target import HdfsTarget
+from sklearn.externals import joblib
 
 from dctool2.common import process_web_page
 
@@ -51,13 +51,11 @@ class CreateDataset(Task):
                     classes.append(page["category"])
                     contents.append(process_web_page(page["content"].lower()))
 
-        with classes_file.open("w") as f2:
-            pickled_classes = pickle.dumps(classes)
-            f2.write(pickled_classes)
+        classes_file.makedirs()
+        joblib.dump(classes, classes_file.path)
 
-        with data_file.open("w") as f2:
-            pickled_data = pickle.dumps(contents)
-            f2.write(pickled_data)
+        data_file.makedirs()
+        joblib.dump(contents, data_file.path)
 
 
 class SplitTrainTestDataset(Task):
@@ -87,11 +85,8 @@ class SplitTrainTestDataset(Task):
 
         classes_file, data_file = self.input()
 
-        with classes_file.open() as f:
-            classes = pickle.loads(f.read())
-
-        with data_file.open() as f:
-            data = pickle.loads(f.read())
+        classes = joblib.load(classes_file.path)
+        data = joblib.load(data_file.path)
 
         data_train, data_test, classes_train, classes_test = train_test_split(
             data,
@@ -105,18 +100,14 @@ class SplitTrainTestDataset(Task):
          classes_test_file,
          data_test_file) = self.output()
 
-        with classes_train_file.open("w") as f:
-            data = pickle.dumps(classes_train)
-            f.write(data)
+        classes_train_file.makedirs()
+        joblib.dump(classes_train, classes_train_file.path)
 
-        with classes_test_file.open("w") as f:
-            data = pickle.dumps(classes_test)
-            f.write(data)
+        classes_test_file.makedirs()
+        joblib.dump(classes_test, classes_test_file.path)
 
-        with data_train_file.open("w") as f:
-            data = pickle.dumps(data_train)
-            f.write(data)
+        data_train_file.makedirs()
+        joblib.dump(data_train, data_train_file.path)
 
-        with data_test_file.open("w") as f:
-            data = pickle.dumps(data_test)
-            f.write(data)
+        data_test_file.makedirs()
+        joblib.dump(data_test, data_test_file.path)

@@ -1,12 +1,12 @@
 import json
 import itertools
-import pickle
 import logging
 import hashlib
 
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
                    LocalTarget, Parameter)
 from sklearn.cross_validation import cross_val_score
+from sklearn.externals import joblib
 
 from dctool2.categories.datasets import SplitTrainTestDataset
 from dctool2.categories.pipelines import CreatePipeline
@@ -64,14 +64,9 @@ class CalculatePipelineCrossValScore(Task):
          classes_test_file,
          data_test_file), pipeline_file = self.input()
 
-        with classes_train_file.open() as f:
-            classes = pickle.loads(f.read())
-
-        with data_train_file.open() as f:
-            data = pickle.loads(f.read())
-
-        with pipeline_file.open() as f:
-            pipeline = pickle.loads(f.read())
+        classes = joblib.load(classes_train_file.path)
+        data = joblib.load(data_train_file.path)
+        pipeline = joblib.load(pipeline_file.path)
 
         parameters = {
             "feature_extractor__min_df": self.min_df,
