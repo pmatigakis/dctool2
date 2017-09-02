@@ -64,8 +64,8 @@ luigi --module dctool2.categories.tasks CreateClassifier \
 --output-folder ""/home/panagiotis/projects/dctool/results"
 ```
 
-The trained pipeline will be in the `<output-folder>/pipeline.pickle` file. Use python's
-`pickle` module to load it.
+The trained pipeline will be in the `<output-folder>/pipeline.pickle` file. Use scikit-learns's
+`sklearn.externals.joblib` module to load it.
 
 The classifier evaluation will be stored in the `<output-folder>/pipeline_evaluation.txt` file.
 
