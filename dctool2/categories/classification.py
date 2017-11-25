@@ -1,7 +1,8 @@
 import logging
 import json
 
-from luigi import Task, LocalTarget, Parameter
+from luigi import Task, LocalTarget
+from luigi.util import inherits
 from sklearn import metrics
 from sklearn.externals import joblib
 
@@ -13,23 +14,15 @@ from dctool2.categories.evaluation import SelectBestPipelineParameters
 logger = logging.getLogger(__name__)
 
 
+@inherits(SplitTrainTestDataset)
+@inherits(CreatePipeline)
+@inherits(SelectBestPipelineParameters)
 class TrainPipeline(Task):
-    documents_file = Parameter()
-    output_folder = Parameter()
-
     def requires(self):
         return [
-            SplitTrainTestDataset(
-                documents_file=self.documents_file,
-                output_folder=self.output_folder
-            ),
-            CreatePipeline(
-                output_folder=self.output_folder
-            ),
-            SelectBestPipelineParameters(
-                documents_file=self.documents_file,
-                output_folder=self.output_folder
-            )
+            self.clone(SplitTrainTestDataset),
+            self.clone(CreatePipeline),
+            self.clone(SelectBestPipelineParameters)
         ]
 
     def output(self):
@@ -61,20 +54,13 @@ class TrainPipeline(Task):
         joblib.dump(pipeline, output_file.path)
 
 
+@inherits(SplitTrainTestDataset)
+@inherits(TrainPipeline)
 class EvaluatePipeline(Task):
-    documents_file = Parameter()
-    output_folder = Parameter()
-
     def requires(self):
         return [
-            SplitTrainTestDataset(
-                documents_file=self.documents_file,
-                output_folder=self.output_folder
-            ),
-            TrainPipeline(
-                documents_file=self.documents_file,
-                output_folder=self.output_folder
-            )
+            self.clone(SplitTrainTestDataset),
+            self.clone(TrainPipeline)
         ]
 
     def output(self):

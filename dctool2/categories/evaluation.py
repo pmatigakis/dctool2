@@ -4,7 +4,8 @@ import logging
 import hashlib
 
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
-                   LocalTarget, Parameter)
+                   LocalTarget)
+from luigi.util import inherits
 from sklearn.cross_validation import cross_val_score
 from sklearn.externals import joblib
 
@@ -15,24 +16,18 @@ from dctool2.categories.pipelines import CreatePipeline
 logger = logging.getLogger(__name__)
 
 
+@inherits(SplitTrainTestDataset)
+@inherits(CreatePipeline)
 class CalculatePipelineCrossValScore(Task):
     min_df = IntParameter()
     max_df = FloatParameter()
     percentile = IntParameter()
     alpha = FloatParameter()
-    random_state = IntParameter()
-    documents_file = Parameter()
-    output_folder = Parameter()
 
     def requires(self):
         return [
-            SplitTrainTestDataset(
-                documents_file=self.documents_file,
-                output_folder=self.output_folder
-            ),
-            CreatePipeline(
-                output_folder=self.output_folder
-            )
+            self.clone(SplitTrainTestDataset),
+            self.clone(CreatePipeline)
         ]
 
     def output(self):
@@ -96,35 +91,31 @@ class CalculatePipelineCrossValScore(Task):
             f.write(json.dumps(result))
 
 
+@inherits(SplitTrainTestDataset)
 class EvaluatePipelines(Task):
-    min_df = ListParameter()
-    max_df = ListParameter()
-    percentile = ListParameter()
-    alpha = ListParameter()
-    random_state = IntParameter()
-    documents_file = Parameter()
-    output_folder = Parameter()
+    min_df_list = ListParameter()
+    max_df_list = ListParameter()
+    percentile_list = ListParameter()
+    alpha_list = ListParameter()
 
     def requires(self):
         pipeline_data = itertools.product(
             # (3, 5, 10, 15, 20),  # min_df
             # (0.5, 0.6, 0.7, 0.8, 0.9),  # max_df
             # (5, 10, 15, 20, 25, 30, 35, 40, 45)  # percentile
-            self.min_df,  # min_df
-            self.max_df,  # max_df
-            self.percentile,  # percentile
-            self.alpha  # alpha
+            self.min_df_list,  # min_df
+            self.max_df_list,  # max_df
+            self.percentile_list,  # percentile
+            self.alpha_list  # alpha
         )
 
         tasks = [
-            CalculatePipelineCrossValScore(
+            self.clone(
+                CalculatePipelineCrossValScore,
                 min_df=min_df,
                 max_df=max_df,
                 percentile=percentile,
-                alpha=alpha,
-                random_state=self.random_state,
-                documents_file=self.documents_file,
-                output_folder=self.output_folder
+                alpha=alpha
             )
             for min_df, max_df, percentile, alpha in pipeline_data
         ]
@@ -147,25 +138,10 @@ class EvaluatePipelines(Task):
                     f.write("{}\n".format(score))
 
 
+@inherits(EvaluatePipelines)
 class SelectBestPipelineParameters(Task):
-    min_df = ListParameter()
-    max_df = ListParameter()
-    percentile = ListParameter()
-    alpha = ListParameter()
-    random_state = IntParameter()
-    documents_file = Parameter()
-    output_folder = Parameter()
-
     def requires(self):
-        return EvaluatePipelines(
-            min_df=self.min_df,
-            max_df=self.max_df,
-            percentile=self.percentile,
-            alpha=self.alpha,
-            random_state=self.random_state,
-            documents_file=self.documents_file,
-            output_folder=self.output_folder
-        )
+        return self.clone(EvaluatePipelines)
 
     def output(self):
         return LocalTarget(

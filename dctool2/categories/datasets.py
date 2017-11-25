@@ -5,6 +5,7 @@ from sklearn.cross_validation import train_test_split
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
                    LocalTarget, ExternalTask, Parameter)
 from luigi.contrib.hdfs.target import HdfsTarget
+from luigi.util import inherits
 from sklearn.externals import joblib
 
 from dctool2.common import process_web_page
@@ -58,17 +59,13 @@ class CreateDataset(Task):
         joblib.dump(contents, data_file.path)
 
 
+@inherits(CreateDataset)
 class SplitTrainTestDataset(Task):
     test_size = FloatParameter()
     random_state = IntParameter()
-    documents_file = Parameter()
-    output_folder = Parameter()
 
     def requires(self):
-        return CreateDataset(
-            documents_file=self.documents_file,
-            output_folder=self.output_folder
-        )
+        return self.clone(CreateDataset)
 
     def output(self):
         base_dir = "{}/train_test_data".format(self.output_folder)
