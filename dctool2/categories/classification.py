@@ -6,7 +6,7 @@ from luigi.util import inherits
 from sklearn import metrics
 from sklearn.externals import joblib
 
-from dctool2.categories.datasets import SplitTrainTestDataset
+from dctool2.categories.datasets import TrainingDataset, TestDataset
 from dctool2.categories.pipelines import CreatePipeline
 from dctool2.categories.evaluation import SelectBestPipelineParameters
 
@@ -14,13 +14,13 @@ from dctool2.categories.evaluation import SelectBestPipelineParameters
 logger = logging.getLogger(__name__)
 
 
-@inherits(SplitTrainTestDataset)
+@inherits(TrainingDataset)
 @inherits(CreatePipeline)
 @inherits(SelectBestPipelineParameters)
 class TrainPipeline(Task):
     def requires(self):
         return [
-            self.clone(SplitTrainTestDataset),
+            self.clone(TrainingDataset),
             self.clone(CreatePipeline),
             self.clone(SelectBestPipelineParameters)
         ]
@@ -33,10 +33,7 @@ class TrainPipeline(Task):
 
         data_files, pipeline_file, pipeline_parameters_file = self.input()
 
-        (classes_train_file,
-         data_train_file,
-         classes_test_file,
-         data_test_file) = data_files
+        classes_train_file, data_train_file = data_files
 
         classes = joblib.load(classes_train_file.path)
         data = joblib.load(data_train_file.path)
@@ -54,12 +51,12 @@ class TrainPipeline(Task):
         joblib.dump(pipeline, output_file.path)
 
 
-@inherits(SplitTrainTestDataset)
+@inherits(TestDataset)
 @inherits(TrainPipeline)
 class EvaluatePipeline(Task):
     def requires(self):
         return [
-            self.clone(SplitTrainTestDataset),
+            self.clone(TestDataset),
             self.clone(TrainPipeline)
         ]
 
@@ -70,10 +67,7 @@ class EvaluatePipeline(Task):
     def run(self):
         logger.info("evaluating pipeline")
 
-        (classes_train_file,
-         data_train_file,
-         classes_test_file,
-         data_test_file), pipeline_file = self.input()
+        (classes_test_file, data_test_file), pipeline_file = self.input()
 
         classes = joblib.load(classes_test_file.path)
         data = joblib.load(data_test_file.path)

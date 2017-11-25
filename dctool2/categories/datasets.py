@@ -3,7 +3,7 @@ import logging
 
 from sklearn.cross_validation import train_test_split
 from luigi import (Task, IntParameter, FloatParameter,
-                   LocalTarget, ExternalTask, Parameter)
+                   LocalTarget, ExternalTask, Parameter, WrapperTask)
 from luigi.contrib.hdfs.target import HdfsTarget
 from luigi.util import inherits
 from sklearn.externals import joblib
@@ -106,3 +106,31 @@ class SplitTrainTestDataset(Task):
 
         data_test_file.makedirs()
         joblib.dump(data_test, data_test_file.path)
+
+
+@inherits(SplitTrainTestDataset)
+class TrainingDataset(WrapperTask):
+    def requires(self):
+        return self.clone(SplitTrainTestDataset)
+
+    def output(self):
+        (classes_train_file,
+         data_train_file,
+         classes_test_file,
+         data_test_file) = self.input()
+
+        return [classes_train_file, data_train_file]
+
+
+@inherits(SplitTrainTestDataset)
+class TestDataset(WrapperTask):
+    def requires(self):
+        return self.clone(SplitTrainTestDataset)
+
+    def output(self):
+        (classes_train_file,
+         data_train_file,
+         classes_test_file,
+         data_test_file) = self.input()
+
+        return [classes_test_file, data_test_file]

@@ -9,14 +9,14 @@ from luigi.util import inherits
 from sklearn.cross_validation import cross_val_score
 from sklearn.externals import joblib
 
-from dctool2.categories.datasets import SplitTrainTestDataset
+from dctool2.categories.datasets import TrainingDataset
 from dctool2.categories.pipelines import CreatePipeline
 
 
 logger = logging.getLogger(__name__)
 
 
-@inherits(SplitTrainTestDataset)
+@inherits(TrainingDataset)
 @inherits(CreatePipeline)
 class CalculatePipelineCrossValScore(Task):
     min_df = IntParameter()
@@ -26,7 +26,7 @@ class CalculatePipelineCrossValScore(Task):
 
     def requires(self):
         return [
-            self.clone(SplitTrainTestDataset),
+            self.clone(TrainingDataset),
             self.clone(CreatePipeline)
         ]
 
@@ -54,10 +54,7 @@ class CalculatePipelineCrossValScore(Task):
     def run(self):
         logger.info("calculating pipeline cross validation score")
 
-        (classes_train_file,
-         data_train_file,
-         classes_test_file,
-         data_test_file), pipeline_file = self.input()
+        (classes_train_file, data_train_file,), pipeline_file = self.input()
 
         classes = joblib.load(classes_train_file.path)
         data = joblib.load(data_train_file.path)
@@ -69,7 +66,6 @@ class CalculatePipelineCrossValScore(Task):
             "feature_selector__percentile": self.percentile,
             "classifier__base_estimator__alpha": self.alpha,
             "classifier__base_estimator__random_state": self.random_state
-            # 'classifier__alpha': (0.00001, 0.000001),
         }
 
         pipeline.set_params(**parameters)
@@ -91,7 +87,7 @@ class CalculatePipelineCrossValScore(Task):
             f.write(json.dumps(result))
 
 
-@inherits(SplitTrainTestDataset)
+@inherits(TrainingDataset)
 class EvaluatePipelines(Task):
     min_df_list = ListParameter()
     max_df_list = ListParameter()
