@@ -96,13 +96,10 @@ class EvaluatePipelines(Task):
 
     def requires(self):
         pipeline_data = itertools.product(
-            # (3, 5, 10, 15, 20),  # min_df
-            # (0.5, 0.6, 0.7, 0.8, 0.9),  # max_df
-            # (5, 10, 15, 20, 25, 30, 35, 40, 45)  # percentile
-            self.min_df_list,  # min_df
-            self.max_df_list,  # max_df
-            self.percentile_list,  # percentile
-            self.alpha_list  # alpha
+            self.min_df_list,
+            self.max_df_list,
+            self.percentile_list,
+            self.alpha_list
         )
 
         tasks = [
