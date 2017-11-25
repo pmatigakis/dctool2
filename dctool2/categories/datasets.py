@@ -2,13 +2,14 @@ import json
 import logging
 
 from sklearn.cross_validation import train_test_split
-from luigi import (Task, IntParameter, FloatParameter, ListParameter,
+from luigi import (Task, IntParameter, FloatParameter,
                    LocalTarget, ExternalTask, Parameter)
 from luigi.contrib.hdfs.target import HdfsTarget
 from luigi.util import inherits
 from sklearn.externals import joblib
 
 from dctool2.common import process_web_page
+from dctool2.categories.common import Dctool2Task
 
 
 logger = logging.getLogger(__name__)
@@ -21,11 +22,8 @@ class Documents(ExternalTask):
         return HdfsTarget(self.documents_file)
 
 
+@inherits(Dctool2Task)
 class CreateDataset(Task):
-    categories = ListParameter()
-    documents_file = Parameter()
-    output_folder = Parameter()
-
     def output(self):
         return [
             LocalTarget(
