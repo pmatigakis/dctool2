@@ -4,7 +4,6 @@ from luigi import Task, LocalTarget, Parameter
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_selection import SelectPercentile, chi2
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import SGDClassifier
 from sklearn.externals import joblib
 
@@ -35,7 +34,7 @@ class CreatePipeline(Task):
 
         feature_selector = SelectPercentile(score_func=chi2, percentile=5)
 
-        classifier = CalibratedClassifierCV(SGDClassifier())
+        classifier = SGDClassifier(loss="log")
 
         pipeline = Pipeline([
             ("feature_extractor", feature_extractor),

@@ -64,8 +64,8 @@ class CalculatePipelineCrossValScore(Task):
             "feature_extractor__min_df": self.min_df,
             "feature_extractor__max_df": self.max_df,
             "feature_selector__percentile": self.percentile,
-            "classifier__base_estimator__alpha": self.alpha,
-            "classifier__base_estimator__random_state": self.random_state
+            "classifier__alpha": self.alpha,
+            "classifier__random_state": self.random_state
         }
 
         pipeline.set_params(**parameters)
@@ -77,8 +77,8 @@ class CalculatePipelineCrossValScore(Task):
                 "feature_extractor__min_df": self.min_df,
                 "feature_extractor__max_df": self.max_df,
                 "feature_selector__percentile": self.percentile,
-                "classifier__base_estimator__alpha": self.alpha,
-                "classifier__base_estimator__random_state": self.random_state
+                "classifier__alpha": self.alpha,
+                "classifier__random_state": self.random_state
             },
             "scores": scores.tolist()
         }
