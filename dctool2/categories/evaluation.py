@@ -6,8 +6,9 @@ import hashlib
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
                    LocalTarget)
 from luigi.util import inherits
-from sklearn.cross_validation import cross_val_score
+from sklearn.cross_validation import KFold
 from sklearn.externals import joblib
+from sklearn.metrics import f1_score
 
 from dctool2.categories.datasets import TrainingDataset
 from dctool2.categories.pipelines import CreatePipeline
@@ -21,8 +22,6 @@ logger = logging.getLogger(__name__)
 class CalculatePipelineCrossValScore(Task):
     min_df = IntParameter()
     max_df = FloatParameter()
-    percentile = IntParameter()
-    alpha = FloatParameter()
 
     def requires(self):
         return [
@@ -33,13 +32,9 @@ class CalculatePipelineCrossValScore(Task):
     def output(self):
         file_id = "min_df-{min_df}__" \
                   "max_df-{max_df}__" \
-                  "percentile-{percentile}__" \
-                  "alpha={alpha}__" \
                   "random_state={random_state}".format(
                       min_df=self.min_df,
                       max_df=self.max_df,
-                      percentile=self.percentile,
-                      alpha=self.alpha,
                       random_state=self.random_state
                   )
 
@@ -62,25 +57,28 @@ class CalculatePipelineCrossValScore(Task):
 
         parameters = {
             "feature_extractor__min_df": self.min_df,
-            "feature_extractor__max_df": self.max_df,
-            "feature_selector__percentile": self.percentile,
-            "classifier__alpha": self.alpha,
-            "classifier__random_state": self.random_state
+            "feature_extractor__max_df": self.max_df
         }
 
         pipeline.set_params(**parameters)
 
-        scores = cross_val_score(pipeline, data, classes)
+        # scores = cross_val_score(pipeline, data, classes, ))
+        scores = []
+        kf = KFold(len(classes))
+        for train_index, test_index in kf:
+            data_train, data_test = data[train_index], data[test_index]
+            classes_train, classes_test = classes[train_index], classes[test_index]
+            pipeline.fit(data_train, classes_train)
+            result = pipeline.predict(data_test)
+            score = f1_score(classes_test, result, average="weighted")
+            scores.append(score)
 
         result = {
             "parameters": {
                 "feature_extractor__min_df": self.min_df,
                 "feature_extractor__max_df": self.max_df,
-                "feature_selector__percentile": self.percentile,
-                "classifier__alpha": self.alpha,
-                "classifier__random_state": self.random_state
             },
-            "scores": scores.tolist()
+            "scores": scores
         }
 
         with self.output().open("w") as f:
@@ -91,26 +89,20 @@ class CalculatePipelineCrossValScore(Task):
 class EvaluatePipelines(Task):
     min_df_list = ListParameter()
     max_df_list = ListParameter()
-    percentile_list = ListParameter()
-    alpha_list = ListParameter()
 
     def requires(self):
         pipeline_data = itertools.product(
             self.min_df_list,
-            self.max_df_list,
-            self.percentile_list,
-            self.alpha_list
+            self.max_df_list
         )
 
         tasks = [
             self.clone(
                 CalculatePipelineCrossValScore,
                 min_df=min_df,
-                max_df=max_df,
-                percentile=percentile,
-                alpha=alpha
+                max_df=max_df
             )
-            for min_df, max_df, percentile, alpha in pipeline_data
+            for min_df, max_df in pipeline_data
         ]
 
         return tasks

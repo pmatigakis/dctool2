@@ -2,9 +2,9 @@ import logging
 
 from luigi import Task, LocalTarget, Parameter
 from sklearn.pipeline import Pipeline
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_selection import SelectPercentile, chi2
-from sklearn.linear_model import SGDClassifier
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.externals import joblib
 
 
@@ -23,7 +23,7 @@ class CreatePipeline(Task):
 
         ngram_range = (1, 2)
 
-        feature_extractor = TfidfVectorizer(
+        feature_extractor = CountVectorizer(
             analyzer="word",
             ngram_range=ngram_range,
             stop_words="english",
@@ -32,13 +32,10 @@ class CreatePipeline(Task):
             min_df=5
         )
 
-        feature_selector = SelectPercentile(score_func=chi2, percentile=5)
-
-        classifier = SGDClassifier(loss="log")
+        classifier = OneVsRestClassifier(MultinomialNB())
 
         pipeline = Pipeline([
             ("feature_extractor", feature_extractor),
-            ("feature_selector", feature_selector),
             ("classifier", classifier)
         ])
 

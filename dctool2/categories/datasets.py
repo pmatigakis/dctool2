@@ -7,6 +7,8 @@ from luigi import (Task, IntParameter, FloatParameter,
 from luigi.contrib.hdfs.target import HdfsTarget
 from luigi.util import inherits
 from sklearn.externals import joblib
+from sklearn.multiclass import LabelBinarizer
+import numpy as np
 
 from dctool2.common import process_web_page
 from dctool2.categories.common import Dctool2Task
@@ -51,19 +53,70 @@ class CreateDataset(Task):
                     contents.append(process_web_page(page["content"].lower()))
 
         classes_file.makedirs()
-        joblib.dump(classes, classes_file.path)
+        joblib.dump(np.array(classes), classes_file.path)
 
         data_file.makedirs()
-        joblib.dump(contents, data_file.path)
+        joblib.dump(np.array(contents), data_file.path)
 
 
 @inherits(CreateDataset)
+class CreateLabelBinarizer(Task):
+    def output(self):
+        path = "{}/label_binarizer/label_binarizer.pickle"
+        return LocalTarget(path.format(self.output_folder))
+
+    def requires(self):
+        return self.clone(CreateDataset)
+
+    def run(self):
+        classes_file, data_file = self.input()
+        classes = joblib.load(classes_file.path)
+
+        binarizer = LabelBinarizer()
+        binarizer.fit(classes)
+
+        binarizer_file = self.output()
+        binarizer_file.makedirs()
+
+        joblib.dump(binarizer, binarizer_file.path)
+
+
+@inherits(CreateLabelBinarizer)
+@inherits(CreateDataset)
+class BinarizeClasses(Task):
+    def output(self):
+        path = "{}/binarized_classes/binarized_classes.pickle"
+        return LocalTarget(path.format(self.output_folder))
+
+    def requires(self):
+        return [
+            self.clone(CreateLabelBinarizer),
+            self.clone(CreateDataset)
+        ]
+
+    def run(self):
+        binarizer_file, (classes_file, data_file) = self.input()
+        binarizer = joblib.load(binarizer_file.path)
+        classes = joblib.load(classes_file.path)
+
+        binarized_classes = binarizer.transform(classes)
+
+        binalized_classes_file = self.output()
+        binalized_classes_file.makedirs()
+        joblib.dump(binarized_classes, binalized_classes_file.path)
+
+
+@inherits(CreateDataset)
+@inherits(BinarizeClasses)
 class SplitTrainTestDataset(Task):
     test_size = FloatParameter()
     random_state = IntParameter()
 
     def requires(self):
-        return self.clone(CreateDataset)
+        return [
+            self.clone(CreateDataset),
+            self.clone(BinarizeClasses)
+        ]
 
     def output(self):
         base_dir = "{}/train_test_data".format(self.output_folder)
@@ -78,9 +131,8 @@ class SplitTrainTestDataset(Task):
     def run(self):
         logger.info("creating classifier train/test dataset split")
 
-        classes_file, data_file = self.input()
-
-        classes = joblib.load(classes_file.path)
+        (classes_file, data_file), binarized_classes_file = self.input()
+        classes = joblib.load(binarized_classes_file.path)
         data = joblib.load(data_file.path)
 
         data_train, data_test, classes_train, classes_test = train_test_split(
