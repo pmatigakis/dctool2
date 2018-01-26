@@ -6,15 +6,18 @@ from sklearn.cross_validation import ShuffleSplit
 import matplotlib.pyplot as plt
 import numpy as np
 
-from dctool2.categories.classification import TrainPipeline
+from dctool2.categories.training import TrainPipelineUsingBestParameters
 from dctool2.categories.datasets import CreateDataset
 
 
-@inherits(TrainPipeline)
+@inherits(TrainPipelineUsingBestParameters)
 @inherits(CreateDataset)
 class CalculateLearningCurveData(Task):
     def requires(self):
-        return [self.clone(TrainPipeline), self.clone(CreateDataset)]
+        return [
+            self.clone(TrainPipelineUsingBestParameters),
+            self.clone(CreateDataset)
+        ]
 
     def output(self):
         return [

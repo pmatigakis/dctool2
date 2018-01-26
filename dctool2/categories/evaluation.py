@@ -1,7 +1,6 @@
 import json
 import itertools
 import logging
-import hashlib
 
 from luigi import (Task, IntParameter, FloatParameter, ListParameter,
                    LocalTarget)
@@ -9,9 +8,11 @@ from luigi.util import inherits
 from sklearn.cross_validation import KFold
 from sklearn.externals import joblib
 from sklearn.metrics import f1_score
+import numpy as np
 
 from dctool2.categories.datasets import TrainingDataset
 from dctool2.categories.pipelines import CreatePipeline
+from dctool2.categories.common import create_classifier_id
 
 
 logger = logging.getLogger(__name__)
@@ -19,66 +20,55 @@ logger = logging.getLogger(__name__)
 
 @inherits(TrainingDataset)
 @inherits(CreatePipeline)
-class CalculatePipelineCrossValScore(Task):
-    min_df = IntParameter()
+class EvaluatePipeline(Task):
     max_df = FloatParameter()
+    min_df = IntParameter()
+
+    def output(self):
+        path = "{output_folder}/pipeline_evaluations/" \
+               "{pipeline_id}.json".format(
+                    output_folder=self.output_folder,
+                    pipeline_id=create_classifier_id(self.max_df, self.min_df)
+               )
+
+        return LocalTarget(path)
 
     def requires(self):
         return [
-            self.clone(TrainingDataset),
-            self.clone(CreatePipeline)
+            self.clone(CreatePipeline),
+            self.clone(TrainingDataset)
         ]
 
-    def output(self):
-        file_id = "min_df-{min_df}__" \
-                  "max_df-{max_df}__" \
-                  "random_state={random_state}".format(
-                      min_df=self.min_df,
-                      max_df=self.max_df,
-                      random_state=self.random_state
-                  )
-
-        file_id = hashlib.sha256(file_id).hexdigest()
-
-        task_file = "pipeline_cross_val_score__{}.json".format(file_id)
-
-        scores_path = "{}/pipeline_cross_val_scores/{}"
-
-        return LocalTarget(scores_path.format(self.output_folder, task_file))
-
     def run(self):
-        logger.info("calculating pipeline cross validation score")
+        pipeline_file, (classes_file, data_file) = self.input()
 
-        (classes_train_file, data_train_file,), pipeline_file = self.input()
+        classes = joblib.load(classes_file.path)
+        data = joblib.load(data_file.path)
 
-        classes = joblib.load(classes_train_file.path)
-        data = joblib.load(data_train_file.path)
         pipeline = joblib.load(pipeline_file.path)
-
-        parameters = {
-            "feature_extractor__min_df": self.min_df,
-            "feature_extractor__max_df": self.max_df
+        params = {
+            "feature_extractor__max_df": self.max_df,
+            "feature_extractor__min_df": self.min_df
         }
+        pipeline.set_params(**params)
 
-        pipeline.set_params(**parameters)
-
-        # scores = cross_val_score(pipeline, data, classes, ))
         scores = []
-        kf = KFold(len(classes))
+        kf = KFold(len(classes), random_state=self.random_state, n_folds=5)
         for train_index, test_index in kf:
             data_train, data_test = data[train_index], data[test_index]
-            classes_train, classes_test = classes[train_index], classes[test_index]
+            classes_train, classes_test = \
+                classes[train_index], classes[test_index]
             pipeline.fit(data_train, classes_train)
             result = pipeline.predict(data_test)
-            score = f1_score(classes_test, result, average="weighted")
+            score = f1_score(classes_test, result, average="samples")
             scores.append(score)
 
         result = {
             "parameters": {
-                "feature_extractor__min_df": self.min_df,
-                "feature_extractor__max_df": self.max_df,
+                "min_df": self.min_df,
+                "max_df": self.max_df,
             },
-            "scores": scores
+            "score": np.mean(scores)
         }
 
         with self.output().open("w") as f:
@@ -98,7 +88,7 @@ class EvaluatePipelines(Task):
 
         tasks = [
             self.clone(
-                CalculatePipelineCrossValScore,
+                EvaluatePipeline,
                 min_df=min_df,
                 max_df=max_df
             )
@@ -109,7 +99,7 @@ class EvaluatePipelines(Task):
 
     def output(self):
         return LocalTarget(
-            "{}/pipeline_evaluations.txt".format(self.output_folder))
+            "{}/pipeline_evaluations.json".format(self.output_folder))
 
     def run(self):
         logger.info("evaluating pipelines")
@@ -117,35 +107,35 @@ class EvaluatePipelines(Task):
         pipeline_score_files = self.input()
 
         with self.output().open("w") as f:
+            reports = []
             for pipeline_score_file in pipeline_score_files:
                 with pipeline_score_file.open("r") as pf:
-                    score = pf.read().strip()
-                    f.write("{}\n".format(score))
+                    evaluation = json.loads(pf.read())
+                    reports.append({
+                        "parameters": evaluation["parameters"],
+                        "score": evaluation["score"]
+                    })
+            f.write("{}\n".format(json.dumps(reports)))
 
 
 @inherits(EvaluatePipelines)
-class SelectBestPipelineParameters(Task):
+class SelectBestPipeline(Task):
     def requires(self):
         return self.clone(EvaluatePipelines)
 
     def output(self):
         return LocalTarget(
-            "{}/best_pipeline_parameters.json".format(self.output_folder))
+            "{}/best_pipeline.json".format(self.output_folder))
 
     def run(self):
-        logger.info("selecting best pipeline features")
-
-        parameter_scores = []
+        logger.info("selecting best pipeline")
 
         with self.input().open("r") as f:
-            for pipeline_score_data in f:
-                data = json.loads(pipeline_score_data)
-
-                parameter_scores.append(data)
+            pipeline_scores = json.loads(f.read())
 
         best_parameters = max(
-            parameter_scores,
-            key=lambda item: sum(item["scores"]) / float(len(item["scores"]))
+            pipeline_scores,
+            key=lambda item: item["score"]
         )
 
         with self.output().open("w") as f:
