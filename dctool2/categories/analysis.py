@@ -5,11 +5,13 @@ from sklearn.metrics import (
     confusion_matrix, f1_score, precision_score, recall_score, accuracy_score
 )
 
-from dctool2.categories.training import TrainPipelineUsingBestParameters
+from dctool2.categories.training import (
+    TrainMultilabelClassifierUsingBestParameters
+)
 from dctool2.categories.datasets import TestDataset, CreateLabelBinarizer
 
 
-@inherits(TrainPipelineUsingBestParameters)
+@inherits(TrainMultilabelClassifierUsingBestParameters)
 @inherits(TestDataset)
 @inherits(CreateLabelBinarizer)
 class CalculateConfusionMatrix(Task):
@@ -20,27 +22,27 @@ class CalculateConfusionMatrix(Task):
 
     def requires(self):
         return [
-            self.clone(TrainPipelineUsingBestParameters),
+            self.clone(TrainMultilabelClassifierUsingBestParameters),
             self.clone(TestDataset),
             self.clone(CreateLabelBinarizer)
         ]
 
     def run(self):
-        pipeline_file, (classes_file, data_file), binarizer_file = self.input()
+        (classifier_file,
+         (classes_file, data_file),
+         binarizer_file) = self.input()
 
-        pipeline = joblib.load(pipeline_file.path)
+        classifier = joblib.load(classifier_file.path)
         binarizer = joblib.load(binarizer_file.path)
         classes = joblib.load(classes_file.path)
         data = joblib.load(data_file.path)
 
-        result = pipeline.predict(data)
+        result = classifier.predict(data)
 
         with self.output().open("w") as f:
             f.write("tn, fp, fn, tp\n")
 
-            estimator_count = len(
-                pipeline.named_steps["classifier"].estimators_)
-            for i in range(estimator_count):
+            for i in range(len(classifier.estimators_)):
                 y = classes[:, i]
 
                 report = confusion_matrix(y, result[:, i]).ravel().tolist()
@@ -48,7 +50,7 @@ class CalculateConfusionMatrix(Task):
                 f.write("{} {}\n".format(binarizer.classes_[i], report))
 
 
-@inherits(TrainPipelineUsingBestParameters)
+@inherits(TrainMultilabelClassifierUsingBestParameters)
 @inherits(TestDataset)
 class CalculateScores(Task):
     def output(self):
@@ -58,18 +60,18 @@ class CalculateScores(Task):
 
     def requires(self):
         return [
-            self.clone(TrainPipelineUsingBestParameters),
+            self.clone(TrainMultilabelClassifierUsingBestParameters),
             self.clone(TestDataset)
         ]
 
     def run(self):
-        pipeline_file, (classes_file, data_file) = self.input()
+        classifier_file, (classes_file, data_file) = self.input()
 
-        pipeline = joblib.load(pipeline_file.path)
+        classifier = joblib.load(classifier_file.path)
         classes = joblib.load(classes_file.path)
         data = joblib.load(data_file.path)
 
-        result = pipeline.predict(data)
+        result = classifier.predict(data)
 
         score_f1 = f1_score(classes, result, average="samples")
         score_accuracy = accuracy_score(classes, result)

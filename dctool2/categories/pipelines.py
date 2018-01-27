@@ -7,6 +7,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.externals import joblib
+from sklearn.feature_selection import SelectKBest, chi2
 
 from dctool2.categories.common import Dctool2TaskBase
 
@@ -15,16 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 @inherits(Dctool2TaskBase)
-class CreatePipeline(Task):
+class CreateMultilabelClassifier(Task):
     def output(self):
-        path = "{output_folder}/pipelines/pipeline.pickle".format(
+        path = "{output_folder}/classifier/classifier.pickle".format(
             output_folder=self.output_folder
         )
 
         return LocalTarget(path)
 
     def run(self):
-        logger.info("creating pipeline")
+        logger.info("creating classifier")
 
         ngram_range = (1, 1)
 
@@ -37,13 +38,19 @@ class CreatePipeline(Task):
             min_df=3
         )
 
-        classifier = OneVsRestClassifier(MultinomialNB())
+        feature_selector = SelectKBest(
+            score_func=chi2,
+            k=1000
+        )
 
         pipeline = Pipeline([
             ("feature_extractor", feature_extractor),
-            ("classifier", classifier)
+            ("feature_selector", feature_selector),
+            ("classifier", MultinomialNB())
         ])
+
+        classifier = OneVsRestClassifier(pipeline)
 
         output_file = self.output()
         output_file.makedirs()
-        joblib.dump(pipeline, output_file.path)
+        joblib.dump(classifier, output_file.path)

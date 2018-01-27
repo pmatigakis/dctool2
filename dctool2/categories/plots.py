@@ -6,16 +6,18 @@ from sklearn.cross_validation import ShuffleSplit
 import matplotlib.pyplot as plt
 import numpy as np
 
-from dctool2.categories.training import TrainPipelineUsingBestParameters
+from dctool2.categories.training import (
+    TrainMultilabelClassifierUsingBestParameters
+)
 from dctool2.categories.datasets import CreateDataset
 
 
-@inherits(TrainPipelineUsingBestParameters)
+@inherits(TrainMultilabelClassifierUsingBestParameters)
 @inherits(CreateDataset)
 class CalculateLearningCurveData(Task):
     def requires(self):
         return [
-            self.clone(TrainPipelineUsingBestParameters),
+            self.clone(TrainMultilabelClassifierUsingBestParameters),
             self.clone(CreateDataset)
         ]
 
@@ -30,9 +32,9 @@ class CalculateLearningCurveData(Task):
         ]
 
     def run(self):
-        pipeline_file, [classes_file, data_file] = self.input()
+        classifier_file, [classes_file, data_file] = self.input()
 
-        pipeline = joblib.load(pipeline_file.path)
+        classifier = joblib.load(classifier_file.path)
         x = joblib.load(data_file.path)
         y = joblib.load(classes_file.path)
 
@@ -45,7 +47,7 @@ class CalculateLearningCurveData(Task):
 
         training_size_range = np.linspace(0.1, 1.0, 10)
         train_sizes, train_scores, test_scores = learning_curve(
-            estimator=pipeline,
+            estimator=classifier,
             X=x,
             y=y,
             cv=cv,

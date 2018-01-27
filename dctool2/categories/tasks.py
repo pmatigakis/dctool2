@@ -3,7 +3,9 @@ import logging
 from luigi import WrapperTask
 from luigi.util import inherits
 
-from dctool2.categories.training import TrainPipelineUsingBestParameters
+from dctool2.categories.training import (
+    TrainMultilabelClassifierUsingBestParameters
+)
 from dctool2.categories.plots import CreateLearningCurvePlot
 from dctool2.categories.analysis import (
     CalculateConfusionMatrix, CalculateScores
@@ -13,14 +15,14 @@ from dctool2.categories.analysis import (
 logger = logging.getLogger(__name__)
 
 
-@inherits(TrainPipelineUsingBestParameters)
+@inherits(TrainMultilabelClassifierUsingBestParameters)
 @inherits(CalculateConfusionMatrix)
 @inherits(CalculateScores)
 @inherits(CreateLearningCurvePlot)
 class CreateClassifier(WrapperTask):
     def requires(self):
         return [
-            self.clone(TrainPipelineUsingBestParameters),
+            self.clone(TrainMultilabelClassifierUsingBestParameters),
             self.clone(CalculateConfusionMatrix),
             self.clone(CalculateScores),
             self.clone(CreateLearningCurvePlot)

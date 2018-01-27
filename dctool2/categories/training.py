@@ -5,20 +5,20 @@ from sklearn.externals import joblib
 from luigi import Task, LocalTarget
 from luigi.util import inherits
 
-from dctool2.categories.pipelines import CreatePipeline
+from dctool2.categories.pipelines import CreateMultilabelClassifier
 from dctool2.categories.datasets import TrainingDataset
-from dctool2.categories.evaluation import SelectBestPipeline
+from dctool2.categories.evaluation import SelectBestMultilabelClassifier
 
 
 logger = logging.getLogger(__name__)
 
 
-@inherits(CreatePipeline)
+@inherits(CreateMultilabelClassifier)
 @inherits(TrainingDataset)
-@inherits(SelectBestPipeline)
-class TrainPipelineUsingBestParameters(Task):
+@inherits(SelectBestMultilabelClassifier)
+class TrainMultilabelClassifierUsingBestParameters(Task):
     def output(self):
-        path = "{output_folder}/trained_pipeline/pipeline.pickle".format(
+        path = "{output_folder}/trained_classifier/classifier.pickle".format(
             output_folder=self.output_folder
         )
 
@@ -26,34 +26,36 @@ class TrainPipelineUsingBestParameters(Task):
 
     def requires(self):
         return [
-            self.clone(CreatePipeline),
+            self.clone(CreateMultilabelClassifier),
             self.clone(TrainingDataset),
-            self.clone(SelectBestPipeline)
+            self.clone(SelectBestMultilabelClassifier)
         ]
 
     def run(self):
-        logger.info("training pipeline")
+        logger.info("training classifier using best parameters")
 
-        (pipeline_file,
+        (classifier_file,
          (classes_file, data_file),
-         best_pipeline_file) = self.input()
+         best_classifier_file) = self.input()
 
-        with best_pipeline_file.open("r") as f:
+        with best_classifier_file.open("r") as f:
             best_pipeline_report = json.loads(f.read())
 
         classes = joblib.load(classes_file.path)
         data = joblib.load(data_file.path)
-        pipeline = joblib.load(pipeline_file.path)
+        classifier = joblib.load(classifier_file.path)
 
-        params = {
+        pipeline_params = {
             "feature_extractor__max_df":
                 best_pipeline_report["parameters"]["max_df"],
             "feature_extractor__min_df":
-                best_pipeline_report["parameters"]["min_df"]
+                best_pipeline_report["parameters"]["min_df"],
+            "feature_selector__k":
+                best_pipeline_report["parameters"]["k"]
         }
-        pipeline.set_params(**params)
-        pipeline.fit(data, classes)
+        classifier.estimator.set_params(**pipeline_params)
+        classifier.fit(data, classes)
 
-        trained_pipeline_file = self.output()
-        trained_pipeline_file.makedirs()
-        joblib.dump(pipeline, trained_pipeline_file.path)
+        trained_classifier_file = self.output()
+        trained_classifier_file.makedirs()
+        joblib.dump(classifier, trained_classifier_file.path)

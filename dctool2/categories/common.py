@@ -14,10 +14,11 @@ class Dctool2Task(Task):
     documents_file = Parameter()
 
 
-def create_classifier_id(max_df, min_df):
-    parameter_string = "{max_df}-{min_df}".format(
+def create_classifier_id(max_df, min_df, k):
+    parameter_string = "{max_df}-{min_df}-{k}".format(
         max_df=max_df,
-        min_df=min_df
+        min_df=min_df,
+        k=k
     )
 
     return hashlib.md5(parameter_string).hexdigest()
