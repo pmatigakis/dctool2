@@ -1,3 +1,5 @@
+import logging
+
 from luigi import Task, LocalTarget
 from luigi.util import inherits
 from sklearn.externals import joblib
@@ -9,6 +11,9 @@ from dctool2.categories.training import (
     TrainMultilabelClassifierUsingBestParameters
 )
 from dctool2.categories.datasets import TestDataset, CreateLabelBinarizer
+
+
+logger = logging.getLogger(__name__)
 
 
 @inherits(TrainMultilabelClassifierUsingBestParameters)
@@ -28,6 +33,8 @@ class CalculateConfusionMatrix(Task):
         ]
 
     def run(self):
+        logger.info("calculating confusion matrix for multilabel classifier")
+
         (classifier_file,
          (classes_file, data_file),
          binarizer_file) = self.input()
@@ -65,6 +72,8 @@ class CalculateScores(Task):
         ]
 
     def run(self):
+        logger.info("calculating scores for multilabel classifier")
+
         classifier_file, (classes_file, data_file) = self.input()
 
         classifier = joblib.load(classifier_file.path)

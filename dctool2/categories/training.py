@@ -32,7 +32,7 @@ class TrainMultilabelClassifierUsingBestParameters(Task):
         ]
 
     def run(self):
-        logger.info("training classifier using best parameters")
+        logger.info("training multilabel classifier using best parameters")
 
         (classifier_file,
          (classes_file, data_file),

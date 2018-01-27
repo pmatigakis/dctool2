@@ -42,6 +42,8 @@ class EvaluateMultilabelClassifier(Task):
         ]
 
     def run(self):
+        logger.info("evaluating multilabel classifier")
+
         classifier_file, (classes_file, data_file) = self.input()
 
         classes = joblib.load(classes_file.path)

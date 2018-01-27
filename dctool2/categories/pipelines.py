@@ -25,7 +25,7 @@ class CreateMultilabelClassifier(Task):
         return LocalTarget(path)
 
     def run(self):
-        logger.info("creating classifier")
+        logger.info("creating multilabel classifier")
 
         ngram_range = (1, 1)
 

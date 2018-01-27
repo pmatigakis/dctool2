@@ -1,3 +1,5 @@
+import logging
+
 from luigi import Task, LocalTarget
 from luigi.util import inherits
 from sklearn.externals import joblib
@@ -10,6 +12,9 @@ from dctool2.categories.training import (
     TrainMultilabelClassifierUsingBestParameters
 )
 from dctool2.categories.datasets import CreateDataset
+
+
+logger = logging.getLogger(__name__)
 
 
 @inherits(TrainMultilabelClassifierUsingBestParameters)
@@ -32,6 +37,8 @@ class CalculateLearningCurveData(Task):
         ]
 
     def run(self):
+        logger.info("calculating learning curve data")
+
         classifier_file, [classes_file, data_file] = self.input()
 
         classifier = joblib.load(classifier_file.path)
@@ -74,6 +81,8 @@ class CreateLearningCurvePlot(Task):
             self.output_folder))
 
     def run(self):
+        logger.info("creating learning curve plot")
+
         train_sizes_file, train_scores_file, test_scores_file = self.input()
 
         train_sizes = joblib.load(train_sizes_file.path)

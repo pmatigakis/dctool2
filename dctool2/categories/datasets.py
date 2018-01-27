@@ -69,6 +69,8 @@ class CreateLabelBinarizer(Task):
         return self.clone(CreateDataset)
 
     def run(self):
+        logger.info("creating binarizer for multilabel classifier")
+
         classes_file, data_file = self.input()
         classes = joblib.load(classes_file.path)
 
@@ -95,6 +97,8 @@ class BinarizeClasses(Task):
         ]
 
     def run(self):
+        logger.info("converting target classes to binarized data")
+
         binarizer_file, (classes_file, data_file) = self.input()
         binarizer = joblib.load(binarizer_file.path)
         classes = joblib.load(classes_file.path)
