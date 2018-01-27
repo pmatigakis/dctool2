@@ -7,7 +7,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.externals import joblib
-from sklearn.feature_selection import SelectKBest, chi2
+from sklearn.feature_selection import SelectPercentile, chi2
 
 from dctool2.categories.common import Dctool2TaskBase
 
@@ -38,9 +38,9 @@ class CreateMultilabelClassifier(Task):
             min_df=3
         )
 
-        feature_selector = SelectKBest(
+        feature_selector = SelectPercentile(
             score_func=chi2,
-            k=1000
+            percentile=10
         )
 
         pipeline = Pipeline([

@@ -14,11 +14,11 @@ class Dctool2Task(Task):
     documents_file = Parameter()
 
 
-def create_classifier_id(max_df, min_df, k):
-    parameter_string = "{max_df}-{min_df}-{k}".format(
+def create_classifier_id(max_df, min_df, percentile):
+    parameter_string = "{max_df}-{min_df}-{percentile}".format(
         max_df=max_df,
         min_df=min_df,
-        k=k
+        percentile=percentile
     )
 
     return hashlib.md5(parameter_string).hexdigest()

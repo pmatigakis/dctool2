@@ -23,14 +23,14 @@ logger = logging.getLogger(__name__)
 class EvaluateMultilabelClassifier(Task):
     max_df = FloatParameter()
     min_df = IntParameter()
-    k = IntParameter()
+    percentile = IntParameter()
 
     def output(self):
         path = "{output_folder}/classifier_evaluations/" \
                "{classifier_id}.json".format(
                     output_folder=self.output_folder,
                     classifier_id=create_classifier_id(
-                        self.max_df, self.min_df, self.k)
+                        self.max_df, self.min_df, self.percentile)
                )
 
         return LocalTarget(path)
@@ -53,7 +53,7 @@ class EvaluateMultilabelClassifier(Task):
         params = {
             "feature_extractor__max_df": self.max_df,
             "feature_extractor__min_df": self.min_df,
-            "feature_selector__k": self.k
+            "feature_selector__percentile": self.percentile
         }
         classifier.estimator.set_params(**params)
 
@@ -72,7 +72,7 @@ class EvaluateMultilabelClassifier(Task):
             "parameters": {
                 "min_df": self.min_df,
                 "max_df": self.max_df,
-                "k": self.k
+                "percentile": self.percentile
             },
             "score": np.mean(scores)
         }
@@ -85,13 +85,13 @@ class EvaluateMultilabelClassifier(Task):
 class EvaluateMultilabelClassifiers(Task):
     min_df_list = ListParameter()
     max_df_list = ListParameter()
-    k_list = ListParameter()
+    percentile_list = ListParameter()
 
     def requires(self):
         pipeline_data = itertools.product(
             self.min_df_list,
             self.max_df_list,
-            self.k_list
+            self.percentile_list
         )
 
         tasks = [
@@ -99,9 +99,9 @@ class EvaluateMultilabelClassifiers(Task):
                 EvaluateMultilabelClassifier,
                 min_df=min_df,
                 max_df=max_df,
-                k=k
+                percentile=percentile
             )
-            for min_df, max_df, k in pipeline_data
+            for min_df, max_df, percentile in pipeline_data
         ]
 
         return tasks

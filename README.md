@@ -37,15 +37,15 @@ parameters that give the best classification result.
 
 The following parameters must be given in the `luigi.cfg` file
 
-| variable       | description                              |
-| -------------- | ---------------------------------------- |
-| documents-file | the hdfs path to the training documents  |
-| output-folder  | the path to store the results            |
+| variable        | description                              |
+|-----------------|------------------------------------------|
+| documents-file  | the hdfs path to the training documents  |
+| output-folder   | the path to store the results            |
 | categories      | what categories to use in the classifier |
 | test-size       | the test set size                        |
 | min-df-list     | the term minimum document frequency      |
 | max-df-list     | the term maximum document frequency      |
-| k-list          | the number of features to keep           |
+| percentile-list | the percentile of features to keep       |
 | namenode-host   | the hadoop namenode address              |
 | namenode-port   | the hadoop namenode port                 |
 

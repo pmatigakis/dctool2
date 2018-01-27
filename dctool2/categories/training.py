@@ -50,8 +50,8 @@ class TrainMultilabelClassifierUsingBestParameters(Task):
                 best_pipeline_report["parameters"]["max_df"],
             "feature_extractor__min_df":
                 best_pipeline_report["parameters"]["min_df"],
-            "feature_selector__k":
-                best_pipeline_report["parameters"]["k"]
+            "feature_selector__percentile":
+                best_pipeline_report["parameters"]["percentile"]
         }
         classifier.estimator.set_params(**pipeline_params)
         classifier.fit(data, classes)
