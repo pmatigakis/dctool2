@@ -4,7 +4,8 @@ from luigi import Task, LocalTarget
 from luigi.util import inherits
 from sklearn.externals import joblib
 from sklearn.metrics import (
-    confusion_matrix, f1_score, precision_score, recall_score, accuracy_score
+    confusion_matrix, f1_score, precision_score, recall_score, accuracy_score,
+    hamming_loss
 )
 
 from dctool2.categories.training import (
@@ -86,9 +87,11 @@ class CalculateScores(Task):
         score_accuracy = accuracy_score(classes, result)
         score_precision = precision_score(classes, result, average="samples")
         score_recall = recall_score(classes, result, average="samples")
+        score_hamming_loss = hamming_loss(classes, result)
 
         with self.output().open("w") as f:
             f.write("f1 score: {}\n".format(score_f1))
             f.write("accuracy: {}\n".format(score_accuracy))
             f.write("recall: {}\n".format(score_recall))
-            f.write("precision: {}".format(score_precision))
+            f.write("precision: {}\n".format(score_precision))
+            f.write("hamming loss: {}".format(score_hamming_loss))

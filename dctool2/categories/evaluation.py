@@ -7,7 +7,9 @@ from luigi import (Task, IntParameter, FloatParameter, ListParameter,
 from luigi.util import inherits
 from sklearn.cross_validation import KFold
 from sklearn.externals import joblib
-from sklearn.metrics import f1_score
+from sklearn.metrics import (
+    f1_score, accuracy_score, recall_score, precision_score, hamming_loss
+)
 import numpy as np
 
 from dctool2.categories.datasets import TrainingDataset
@@ -57,7 +59,11 @@ class EvaluateMultilabelClassifier(Task):
         }
         classifier.estimator.set_params(**params)
 
-        scores = []
+        f1_scores = []
+        accuracy_scores = []
+        precision_scores = []
+        recall_scores = []
+        hamming_losses = []
         kf = KFold(len(classes), random_state=self.random_state, n_folds=5)
         for train_index, test_index in kf:
             data_train, data_test = data[train_index], data[test_index]
@@ -65,8 +71,13 @@ class EvaluateMultilabelClassifier(Task):
                 classes[train_index], classes[test_index]
             classifier.fit(data_train, classes_train)
             result = classifier.predict(data_test)
-            score = f1_score(classes_test, result, average="samples")
-            scores.append(score)
+            f1_scores.append(f1_score(classes_test, result, average="samples"))
+            accuracy_scores.append(accuracy_score(classes_test, result))
+            precision_scores.append(
+                precision_score(classes_test, result, average="samples"))
+            recall_scores.append(
+                recall_score(classes_test, result, average="samples"))
+            hamming_losses.append(hamming_loss(classes_test, result))
 
         result = {
             "parameters": {
@@ -74,7 +85,11 @@ class EvaluateMultilabelClassifier(Task):
                 "max_df": self.max_df,
                 "percentile": self.percentile
             },
-            "score": np.mean(scores)
+            "f1_score": np.mean(f1_scores),
+            "precision_score": np.mean(precision_scores),
+            "recall_score": np.mean(recall_scores),
+            "accuracy_score": np.mean(accuracy_scores),
+            "hamming_loss": np.mean(hamming_losses)
         }
 
         with self.output().open("w") as f:
@@ -122,7 +137,11 @@ class EvaluateMultilabelClassifiers(Task):
                     evaluation = json.loads(pf.read())
                     reports.append({
                         "parameters": evaluation["parameters"],
-                        "score": evaluation["score"]
+                        "f1_score": evaluation["f1_score"],
+                        "recall_score": evaluation["recall_score"],
+                        "accuracy_score": evaluation["accuracy_score"],
+                        "precision_score": evaluation["precision_score"],
+                        "hamming_loss": evaluation["hamming_loss"]
                     })
             f.write("{}\n".format(json.dumps(reports)))
 
@@ -142,9 +161,9 @@ class SelectBestMultilabelClassifier(Task):
         with self.input().open("r") as f:
             classifier_scores = json.loads(f.read())
 
-        best_parameters = max(
+        best_parameters = min(
             classifier_scores,
-            key=lambda item: item["score"]
+            key=lambda item: item["hamming_loss"]
         )
 
         with self.output().open("w") as f:
