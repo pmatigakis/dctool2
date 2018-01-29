@@ -11,6 +11,7 @@ def get_arguments():
     parser = ArgumentParser()
 
     parser.add_argument("classifier")
+    parser.add_argument("binarizer")
     parser.add_argument("url")
 
     return parser.parse_args()
@@ -20,6 +21,7 @@ def main():
     args = get_arguments()
 
     classifier = joblib.load(args.classifier)
+    binarizer = joblib.load(args.binarizer)
 
     response = requests.get(args.url)
 
@@ -31,7 +33,7 @@ def main():
 
     result = classifier.predict_proba([contents])
 
-    for category, probability in zip(classifier.classes_, result[0]):
+    for category, probability in zip(binarizer.classes_, result[0]):
         print(category, probability)
 
 
