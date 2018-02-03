@@ -7,7 +7,7 @@ from luigi import (Task, IntParameter, FloatParameter,
 from luigi.contrib.hdfs.target import HdfsTarget
 from luigi.util import inherits
 from sklearn.externals import joblib
-from sklearn.multiclass import LabelBinarizer
+from sklearn.preprocessing import MultiLabelBinarizer
 import numpy as np
 
 from dctool2.common import process_web_page
@@ -49,7 +49,7 @@ class CreateDataset(Task):
                 page = json.loads(line)
                 logger.info("processing %s", page["url"])
                 if page["category"] in self.categories:
-                    classes.append(page["category"])
+                    classes.append([page["category"]])
                     contents.append(process_web_page(page["content"].lower()))
 
         classes_file.makedirs()
@@ -74,7 +74,7 @@ class CreateLabelBinarizer(Task):
         classes_file, data_file = self.input()
         classes = joblib.load(classes_file.path)
 
-        binarizer = LabelBinarizer()
+        binarizer = MultiLabelBinarizer()
         binarizer.fit(classes)
 
         binarizer_file = self.output()
