@@ -11,6 +11,7 @@ setup(
         "luigi==2.3.3",
         "numpy==1.11.1",
         "scipy==0.18.0",
-        "scikit-learn==0.17.1"
+        "scikit-learn==0.17.1",
+        "matplotlib==2.2.2"
     ]
 )
