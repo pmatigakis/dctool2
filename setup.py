@@ -1,17 +1,15 @@
 from setuptools import setup, find_packages
 
+with open("requirements.txt") as f:
+    install_requires = f.readlines()
+
 setup(
     name='dctool2',
     version='0.1.0',
+    author="Panagiotis Matigakis",
+    author_email="pmatigakis@gmail.com",
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=[
-        "beautifulsoup4==4.5.1",
-        "luigi==2.3.3",
-        "numpy==1.11.1",
-        "scipy==0.18.0",
-        "scikit-learn==0.17.1",
-        "matplotlib==2.2.2"
-    ]
+    install_requires=install_requires
 )
