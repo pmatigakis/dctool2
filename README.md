@@ -1,10 +1,10 @@
-dctool2 is a collection of luigi tasks that train a web page classifier.
+dctool2 is a collection of luigi tasks that train a document text classifier.
 
 ### Installation
 Create and activate a virtualenv environment
 
 ```
-virtualenv --python=python2.7 virtualenv
+virtualenv --python=python3 virtualenv
 source virtualenv/bin/activate
 ```
 
@@ -15,14 +15,14 @@ python setup.py install
 ```
 
 ### Usage
-dctool2 requires some labeled web pages to be stored in a file on an hdfs folder.
-Every line on that file must contain one json encoded object per web page. The
+dctool2 requires some labeled documents to be stored in a file on an hdfs folder.
+Every line on that file must contain one json encoded object per document. The
 contents of the object must have the following schema.
 
 ```python
 {
-    "content": "the web page content",
-    "category": "the web page category"
+    "text": "the document content",
+    "category": "the document category"
 }
 ```
 
