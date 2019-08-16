@@ -1,7 +1,7 @@
 import json
 import logging
 
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
 from luigi import (Task, IntParameter, FloatParameter,
                    LocalTarget, ExternalTask, Parameter, WrapperTask)
 from luigi.contrib.hdfs.target import HdfsTarget
@@ -10,7 +10,6 @@ from sklearn.externals import joblib
 from sklearn.preprocessing import MultiLabelBinarizer
 import numpy as np
 
-from dctool2.common import process_web_page
 from dctool2.categories.common import Dctool2Task
 
 
@@ -48,9 +47,9 @@ class CreateDataset(Task):
             for line in input_file:
                 page = json.loads(line)
                 logger.info("processing %s", page["url"])
-                if page["category"] in self.categories:
+                if page["category"] in self.categories and page["text"]:
                     classes.append([page["category"]])
-                    contents.append(process_web_page(page["content"].lower()))
+                    contents.append(page["text"].lower())
 
         classes_file.makedirs()
         joblib.dump(np.array(classes), classes_file.path)

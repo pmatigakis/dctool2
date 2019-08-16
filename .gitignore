@@ -6,3 +6,4 @@ data/
 upload_data
 dctool2.egg-info/
 virtualenv/
+luigi.cfg

@@ -21,4 +21,4 @@ def create_classifier_id(max_df, min_df, percentile):
         percentile=percentile
     )
 
-    return hashlib.md5(parameter_string).hexdigest()
+    return hashlib.md5(parameter_string.encode()).hexdigest()
